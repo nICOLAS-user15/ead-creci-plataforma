@@ -1,16 +1,564 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Plataforma EAD CRECI — Protótipo</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma EAD CRECI — Protótipo Interativo</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        creci: {
+                            blue: '#0088CC',      // 30% Secundária — Azul do Moodle / CRECI
+                            darkBlue: '#0073B7',
+                            gold: '#D4AF37',      // 10% Acento — Dourado Oficial / Selo
+                            goldDark: '#B89628',
+                            slate: '#0F172A',
+                            surfaceDark: '#1E293B',
+                            bgDark: '#0B0F17'      // 60% Dominante — Fundo Escuro Sábrio
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media print {
+            body * { visibility: hidden; }
+            #modal-certificado, #modal-certificado * { visibility: visible; }
+            #modal-certificado { position: absolute; left: 0; top: 0; width: 100%; height: 100%; padding: 0; background: white; }
+            .no-print { display: none !important; }
+        }
+    </style>
 </head>
-<body>
-  <header>
-    <h1>Plataforma EAD CRECI</h1>
-  </header>
-  <main>
-    <p>Protótipo inicial — estrutura placeholder.</p>
-  </main>
+<body class="bg-slate-50 text-slate-800 dark:bg-creci-bgDark dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
+
+    <!-- CABEÇALHO SUPERIOR (PROTÓTIPO / BARRA DE PERFIL) -->
+    <header class="bg-slate-900 text-slate-200 text-xs py-2 px-4 flex flex-wrap justify-between items-center border-b border-slate-800 no-print">
+        <div class="flex items-center space-x-3">
+            <span class="font-bold text-creci-gold flex items-center gap-1">
+                <i data-lucide="shield-check" class="w-4 h-4"></i> PROTÓTIPO EAD CRECI
+            </span>
+            <span class="hidden md:inline text-slate-400">|</span>
+            <span class="hidden md:inline text-slate-400">Simulador de Perfis e Regras de Negócio</span>
+        </div>
+        
+        <div class="flex items-center space-x-4 mt-2 sm:mt-0">
+            <!-- Seletor de Perfil -->
+            <div class="flex items-center space-x-1">
+                <label for="profile-select" class="text-slate-400">Perfil Ativo:</label>
+                <select id="profile-select" onchange="switchProfile(this.value)" class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-2 py-1 focus:outline-none focus:border-creci-blue">
+                    <option value="corretor">Corretor (Aluno)</option>
+                    <option value="admin_master">Admin Master (COFECI)</option>
+                    <option value="admin_regional">Admin Regional (CRECI-SP)</option>
+                </select>
+            </div>
+
+            <!-- Botão de Tema Escuro -->
+            <button onclick="toggleDarkMode()" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition" title="Alternar Tema">
+                <i id="theme-icon" data-lucide="moon" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- NAVEGAÇÃO PRINCIPAL (AZUL INSTITUCIONAL - 30%) -->
+    <nav class="bg-creci-blue dark:bg-slate-900 text-white shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-white p-1 rounded">
+                        <div class="bg-creci-blue text-creci-gold font-bold px-2 py-0.5 text-xs rounded border border-creci-gold flex items-center gap-1">
+                            <span>EAD</span>
+                            <span class="text-white text-[10px]">CRECI</span>
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight tracking-wide">Plataforma de Ensino a Distância</h1>
+                        <p class="text-[11px] text-sky-100 dark:text-slate-400">Conselho Regional de Corretores de Imóveis</p>
+                    </div>
+                </div>
+
+                <!-- Abas da Navegação -->
+                <div class="hidden sm:flex items-center space-x-1" id="nav-tabs">
+                    <button onclick="switchTab('todos-cursos')" id="tab-todos-cursos" class="tab-btn px-4 py-2 rounded-md text-sm font-medium transition bg-white/10 text-white border-b-2 border-creci-gold">
+                        Todos os Cursos
+                    </button>
+                    <button onclick="switchTab('meus-cursos')" id="tab-meus-cursos" class="tab-btn px-4 py-2 rounded-md text-sm font-medium text-sky-100 hover:bg-white/10 hover:text-white transition">
+                        Meus Cursos <span id="badge-meus-cursos-count" class="ml-1 bg-creci-gold text-slate-900 text-xs px-1.5 py-0.2 rounded-full font-bold">1</span>
+                    </button>
+                    <button onclick="switchTab('certificados')" id="tab-certificados" class="tab-btn px-4 py-2 rounded-md text-sm font-medium text-sky-100 hover:bg-white/10 hover:text-white transition">
+                        Meus Certificados
+                    </button>
+                    <button onclick="switchTab('admin-panel')" id="tab-admin-panel" class="tab-btn hidden px-4 py-2 rounded-md text-sm font-medium text-creci-gold hover:bg-white/10 transition flex items-center gap-1">
+                        <i data-lucide="settings" class="w-4 h-4"></i> Painel Admin
+                    </button>
+                </div>
+
+                <!-- Perfil do Usuário Logado -->
+                <div class="flex items-center space-x-3">
+                    <div class="text-right hidden md:block">
+                        <p id="user-display-name" class="text-sm font-semibold">MONTEIRO LOBATO DA SILVA</p>
+                        <p id="user-display-role" class="text-xs text-sky-200 dark:text-slate-400">CRECI 2ª Região - SP</p>
+                    </div>
+                    <div class="w-9 h-9 rounded-full bg-slate-800 border-2 border-creci-gold flex items-center justify-center font-bold text-creci-gold">
+                        <span id="user-avatar-initials">ML</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- CONTEÚDO PRINCIPAL (FUNDO NEUTRO - 60%) -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 no-print">
+
+        <!-- ALERTA DE STATUS / BOAS-VINDAS -->
+        <div id="status-banner" class="mb-6 bg-white dark:bg-creci-surfaceDark border-l-4 border-creci-blue p-4 rounded-r shadow-sm flex justify-between items-center">
+            <div>
+                <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">Bem-vindo à Nova Plataforma EAD CRECI</h2>
+                <p class="text-sm text-slate-600 dark:text-slate-300">Ambiente virtual focado no aperfeiçoamento contínuo dos Corretores de Imóveis.</p>
+            </div>
+            <button onclick="showModal('modal-tutorial')" class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs px-3 py-2 rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1">
+                <i data-lucide="play-circle" class="w-4 h-4 text-creci-blue"></i> Tutorial da Plataforma
+            </button>
+        </div>
+
+        <!-- ABA 1: TODOS OS CURSOS -->
+        <section id="sec-todos-cursos" class="tab-content">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white">Catálogo de Cursos Disponíveis</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Cursos Padrão e Exclusivos com Certificação Oficial CRECI</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <input type="text" placeholder="Buscar curso..." class="bg-white dark:bg-creci-surfaceDark border border-slate-300 dark:border-slate-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-creci-blue">
+                </div>
+            </div>
+
+            <!-- GRELHA DE CURSOS (GRID SÓBRIA) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- CARD 1: CURSO PADRÃO (HP12C) -->
+                <div class="bg-white dark:bg-creci-surfaceDark rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition">
+                    <div class="h-36 bg-slate-800 relative flex items-center justify-center p-4">
+                        <i data-lucide="calculator" class="w-16 h-16 text-creci-blue opacity-80"></i>
+                        <span class="absolute top-2 right-2 bg-slate-900/80 text-creci-gold text-xs px-2 py-0.5 rounded border border-creci-gold/40">
+                            PADRÃO
+                        </span>
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Edição 357</span>
+                            <h3 class="font-bold text-base text-slate-900 dark:text-white mt-1">Como Usar a HP12C no Mercado Imobiliário</h3>
+                            <p class="text-xs text-slate-600 dark:text-slate-300 mt-2 line-clamp-2">Aprenda a operar as teclas financeiras e efetuar cálculos de financiamento e lucros para seus clientes.</p>
+                        </div>
+                        <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
+                            <span class="text-xs text-slate-500">Aulas Diárias • Livre</span>
+                            <button onclick="openEnrollModal('hp12c')" class="bg-creci-gold hover:bg-creci-goldDark text-slate-900 font-bold text-xs px-4 py-2 rounded transition flex items-center gap-1 shadow-sm">
+                                Inscrever-se <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 2: CURSO EXCLUSIVO (AVALIAÇÃO IMOBILIÁRIA / PTAM) -->
+                <div class="bg-white dark:bg-creci-surfaceDark rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition">
+                    <div class="h-36 bg-slate-900 relative flex items-center justify-center p-4">
+                        <i data-lucide="file-check-2" class="w-16 h-16 text-creci-gold opacity-80"></i>
+                        <span class="absolute top-2 right-2 bg-creci-gold text-slate-900 font-bold text-xs px-2 py-0.5 rounded">
+                            EXCLUSIVO REGIONAL
+                        </span>
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Edição 291 — Turma SP</span>
+                            <h3 class="font-bold text-base text-slate-900 dark:text-white mt-1">Avaliação Imobiliária & Elaboração de PTAM</h3>
+                            <p class="text-xs text-slate-600 dark:text-slate-300 mt-2 line-clamp-2">Capacitação avançada para elaboração de Parecer Técnico de Avaliação Mercadológica com prova presencial.</p>
+                        </div>
+                        <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
+                            <span class="text-xs text-slate-500">Requer Prova Presencial</span>
+                            <button onclick="openEnrollModal('ptam')" class="bg-creci-blue hover:bg-creci-darkBlue text-white font-bold text-xs px-4 py-2 rounded transition flex items-center gap-1 shadow-sm">
+                                Solicitar Vaga
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 3: CURSO ENCERRADO (LUCRO IMOBILIÁRIO) -->
+                <div class="bg-white dark:bg-creci-surfaceDark rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition opacity-90">
+                    <div class="h-36 bg-slate-800 relative flex items-center justify-center p-4">
+                        <i data-lucide="building-2" class="w-16 h-16 text-emerald-500 opacity-80"></i>
+                        <span class="absolute top-2 right-2 bg-emerald-600 text-white font-bold text-xs px-2 py-0.5 rounded">
+                            CONCLUÍDO
+                        </span>
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Edição 322</span>
+                            <h3 class="font-bold text-base text-slate-900 dark:text-white mt-1">Lucro Imobiliário e Legislação Tributária</h3>
+                            <p class="text-xs text-slate-600 dark:text-slate-300 mt-2 line-clamp-2">Aspectos tributários, cálculo de imposto de renda sobre ganho de capital na alienação de imóveis.</p>
+                        </div>
+                        <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
+                            <span class="text-xs text-emerald-600 font-semibold">Aprovado (100%)</span>
+                            <button onclick="switchTab('certificados')" class="border border-creci-blue text-creci-blue dark:text-sky-400 hover:bg-creci-blue hover:text-white font-bold text-xs px-3 py-1.5 rounded transition">
+                                Ver Certificado
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ABA 2: APENAS MEUS CURSOS -->
+        <section id="sec-meus-cursos" class="tab-content hidden">
+            <div class="mb-6">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Meus Cursos em Andamento</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Acompanhe seu progresso e acesse a sala de aula virtual</p>
+            </div>
+
+            <!-- CURSO ATIVO EM ANDAMENTO -->
+            <div id="meus-cursos-container" class="space-y-4">
+                <div class="bg-white dark:bg-creci-surfaceDark rounded-lg border border-slate-200 dark:border-slate-700 p-5 shadow-sm flex flex-col md:flex-row justify-between md:items-center gap-4">
+                    <div class="flex items-start space-x-4">
+                        <div class="p-3 bg-sky-100 dark:bg-slate-800 text-creci-blue rounded-lg">
+                            <i data-lucide="book-open" class="w-8 h-8"></i>
+                        </div>
+                        <div>
+                            <span class="bg-sky-100 text-creci-blue dark:bg-slate-800 dark:text-sky-300 text-[10px] font-bold px-2 py-0.5 rounded">EM ANDAMENTO</span>
+                            <h3 class="font-bold text-base text-slate-900 dark:text-white mt-1">Como Usar a HP12C no Mercado Imobiliário — Ed. 357</h3>
+                            <p class="text-xs text-slate-500 mt-1">Último acesso: Hoje às 10:15 • Aula 1 Liberada</p>
+                            
+                            <!-- Barra de Progresso (Regra 10% Destaque) -->
+                            <div class="w-full md:w-64 bg-slate-200 dark:bg-slate-700 h-2 rounded-full mt-3 overflow-hidden">
+                                <div class="bg-creci-gold h-full rounded-full" style="width: 25%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <button onclick="openClassroom('hp12c')" class="w-full md:w-auto bg-creci-blue hover:bg-creci-darkBlue text-white font-bold text-sm px-5 py-2.5 rounded transition flex items-center justify-center gap-2 shadow">
+                            <i data-lucide="play" class="w-4 h-4 fill-white"></i> Acessar Sala de Aula
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 3: MEUS CERTIFICADOS -->
+        <section id="sec-certificados" class="tab-content hidden">
+            <div class="mb-6">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Meus Certificados de Conclusão</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Emissão e validação de diplomas de capacitação profissional do PROECCI</p>
+            </div>
+
+            <div class="bg-white dark:bg-creci-surfaceDark rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs uppercase font-semibold">
+                        <tr>
+                            <th class="p-4">Curso</th>
+                            <th class="p-4">Data de Conclusão</th>
+                            <th class="p-4">Código de Validação</th>
+                            <th class="p-4 text-right">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                        <tr>
+                            <td class="p-4 font-semibold text-slate-900 dark:text-white">Lucro Imobiliário e Legislação Tributária — Ed. 322</td>
+                            <td class="p-4 text-slate-600 dark:text-slate-300">17/10/2026</td>
+                            <td class="p-4 font-mono text-xs text-slate-500">4678-B17C-AE5E-D60D</td>
+                            <td class="p-4 text-right">
+                                <button onclick="showCertificateModal()" class="bg-creci-gold hover:bg-creci-goldDark text-slate-900 font-bold text-xs px-3 py-1.5 rounded transition inline-flex items-center gap-1">
+                                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Emitir PDF
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ABA 4: PAINEL ADMINISTRATIVO (MASTER / REGIONAL) -->
+        <section id="sec-admin-panel" class="tab-content hidden">
+            <div class="mb-6 flex justify-between items-center">
+                <div>
+                    <h2 id="admin-panel-title" class="text-xl font-bold text-slate-900 dark:text-white">Painel do Administrador Master (COFECI)</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Gerenciamento global de turmas, análises de PTAM e lançamento de notas</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Fila de Análise PTAM -->
+                <div class="lg:col-span-2 bg-white dark:bg-creci-surfaceDark p-5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <h3 class="font-bold text-base text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                        <i data-lucide="file-search" class="w-5 h-5 text-creci-blue"></i> Fila de Pareceres Técnicos (PTAM)
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">
+                                <tr>
+                                    <th class="p-2.5">Corretor</th>
+                                    <th class="p-2.5">Regional</th>
+                                    <th class="p-2.5">Arquivo PDF</th>
+                                    <th class="p-2.5">Status</th>
+                                    <th class="p-2.5 text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                                <tr>
+                                    <td class="p-2.5 font-medium">João da Silva (CRECI 12345)</td>
+                                    <td class="p-2.5">CRECI-SP 2ª Região</td>
+                                    <td class="p-2.5 text-blue-600 underline">PTAM_Avaliacao_v1.pdf</td>
+                                    <td class="p-2.5"><span class="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.5 rounded font-bold">EM ANÁLISE</span></td>
+                                    <td class="p-2.5 text-right space-x-1">
+                                        <button onclick="alert('PTAM Aprovado!')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Aprovar</button>
+                                        <button onclick="alert('Solicitado reenvio de PTAM.')" class="bg-amber-600 text-white px-2 py-1 rounded text-[10px] font-bold">Reapresentar</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Lançamento / Importação XLSX -->
+                <div class="bg-white dark:bg-creci-surfaceDark p-5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <h3 class="font-bold text-base text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                        <i data-lucide="upload" class="w-5 h-5 text-creci-gold"></i> Importar Notas das Provas
+                    </h3>
+                    <p class="text-xs text-slate-500 mb-4">Carga em lote de notas de provas presenciais via planilha Excel (.xlsx).</p>
+                    <div class="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg p-6 text-center">
+                        <i data-lucide="file-spreadsheet" class="w-10 h-10 mx-auto text-slate-400 mb-2"></i>
+                        <p class="text-xs text-slate-600 dark:text-slate-300">Arraste o arquivo .XLSX aqui ou clique para selecionar</p>
+                        <button onclick="alert('Simulação: Planilha XLSX importada com sucesso!')" class="mt-3 bg-slate-800 text-white hover:bg-slate-700 text-xs font-bold px-3 py-1.5 rounded">
+                            Selecionar Arquivo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL: PLAYER DE AULA / SALA DE AULA -->
+    <div id="modal-classroom" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 no-print">
+        <div class="bg-white dark:bg-creci-surfaceDark max-w-4xl w-full rounded-xl shadow-2xl overflow-hidden border border-slate-700 flex flex-col max-h-[90vh]">
+            <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
+                <div>
+                    <span class="text-creci-gold text-xs font-bold">AULA 1 DE 4</span>
+                    <h3 class="font-bold text-base">Operações Aritméticas e Teclado da HP12C</h3>
+                </div>
+                <button onclick="closeModal('modal-classroom')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1 space-y-4">
+                <!-- Vídeo Incorporado (TV CRECI) -->
+                <div class="aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center relative">
+                    <iframe class="w-full h-full" src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ" title="Aula EAD CRECI" frameborder="0" allowfullscreen></iframe>
+                </div>
+
+                <div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-sm text-slate-900 dark:text-white">Apostila em PDF da Aula 1</h4>
+                        <p class="text-xs text-slate-500">Material complementar oficial para acompanhamento dos exercícios</p>
+                    </div>
+                    <button class="bg-creci-blue hover:bg-creci-darkBlue text-white text-xs font-bold px-3 py-2 rounded flex items-center gap-1">
+                        <i data-lucide="download" class="w-4 h-4"></i> Baixar PDF
+                    </button>
+                </div>
+
+                <!-- Exercício de Fixação com Trava -->
+                <div class="border border-slate-200 dark:border-slate-700 p-4 rounded-lg">
+                    <h4 class="font-bold text-sm text-slate-900 dark:text-white mb-2">Exercício Obrigatório de Fixação</h4>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 mb-3">Responda corretamente para liberar a Aula 2 (Necessário mínimo de 60% de acerto).</p>
+                    <div class="space-y-2 text-xs">
+                        <label class="flex items-center space-x-2 p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
+                            <input type="radio" name="quiz" class="text-creci-blue">
+                            <span>A tecla RPN executa comandos sem necessidade de pressionar a tecla ENTER.</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
+                            <input type="radio" name="quiz" class="text-creci-blue">
+                            <span>A HP12C utiliza a Notação Polonesa Reversa (RPN) para os cálculos financeiros.</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-slate-100 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+                <button onclick="alert('Exercício Concluído! Próxima aula liberada.'); closeModal('modal-classroom')" class="bg-creci-gold hover:bg-creci-goldDark text-slate-900 font-bold text-xs px-5 py-2.5 rounded transition">
+                    Enviar Resposta e Avançar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CERTIFICADO IMPRESSO (OFICIAL) -->
+    <div id="modal-certificado" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white text-slate-900 max-w-3xl w-full p-8 rounded-lg shadow-2xl border-8 border-creci-gold relative">
+            <button onclick="closeModal('modal-certificado')" class="absolute top-3 right-3 text-slate-400 hover:text-slate-800 no-print">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+
+            <!-- Moldura do Diploma -->
+            <div class="text-center space-y-4 border-2 border-slate-300 p-6">
+                <div class="flex justify-center items-center gap-2">
+                    <div class="w-10 h-10 bg-creci-blue text-creci-gold flex items-center justify-center font-bold text-xs rounded border border-creci-gold">
+                        CRECI
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-lg text-creci-blue uppercase tracking-widest">PROECCI / CRECI-SP</h2>
+                        <p class="text-[10px] text-slate-500 uppercase">Programa de Educação Continuada do Corretor de Imóveis</p>
+                    </div>
+                </div>
+
+                <h1 class="text-2xl font-serif font-bold text-creci-gold uppercase tracking-wider py-2">Certificado de Conclusão</h1>
+
+                <p class="text-sm text-slate-700 leading-relaxed">
+                    Certificamos que <strong class="text-slate-900 underline">MONTEIRO LOBATO DA SILVA FILHO</strong>, portador da inscrição CRECI nº <strong class="text-slate-900">99999-F</strong>, concluiu com êxito o curso de aperfeiçoamento profissional em:
+                </p>
+
+                <h3 class="text-xl font-bold text-creci-blue py-1">LUCRO IMOBILIÁRIO E LEGISLAÇÃO TRIBUTÁRIA</h3>
+
+                <p class="text-xs text-slate-500">
+                    Carga Horária: 20 horas • Período: 01/10/2026 a 17/10/2026
+                </p>
+
+                <div class="pt-8 flex justify-between items-end text-xs text-slate-500 border-t border-slate-200 mt-6">
+                    <div class="text-left">
+                        <p>Código de Autenticidade:</p>
+                        <p class="font-mono font-bold text-slate-800">4678-B17C-AE5E-D60D-8E1B</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-24 border-b border-slate-800 mb-1 mx-auto"></div>
+                        <p class="font-bold text-slate-800">Diretoria Acadêmica EAD</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end space-x-3 no-print">
+                <button onclick="window.print()" class="bg-creci-blue hover:bg-creci-darkBlue text-white text-xs font-bold px-4 py-2 rounded flex items-center gap-1 shadow">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir / Salvar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: TUTORIAL -->
+    <div id="modal-tutorial" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 no-print">
+        <div class="bg-white dark:bg-creci-surfaceDark max-w-lg w-full p-6 rounded-xl shadow-xl border border-slate-700">
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white mb-2">Tutorial da Plataforma EAD</h3>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mb-4">Assista aos tutoriais de navegação, envio de PTAM e emissão de certificados.</p>
+            <div class="space-y-2 text-xs">
+                <div class="p-3 bg-slate-100 dark:bg-slate-800 rounded flex justify-between items-center">
+                    <span>1. Como se inscrever em Cursos Padrão e Exclusivos</span>
+                    <i data-lucide="play-circle" class="w-4 h-4 text-creci-blue cursor-pointer"></i>
+                </div>
+                <div class="p-3 bg-slate-100 dark:bg-slate-800 rounded flex justify-between items-center">
+                    <span>2. Como enviar o arquivo PTAM em formato PDF</span>
+                    <i data-lucide="play-circle" class="w-4 h-4 text-creci-blue cursor-pointer"></i>
+                </div>
+            </div>
+            <button onclick="closeModal('modal-tutorial')" class="mt-5 w-full bg-slate-800 text-white text-xs font-bold py-2 rounded">Fechar Tutorial</button>
+        </div>
+    </div>
+
+    <!-- RODAPÉ INSTITUCIONAL (RODAPÉ SÓBRIO) -->
+    <footer class="bg-slate-900 text-slate-400 text-xs py-6 border-t border-slate-800 mt-auto no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
+            <p>Plataforma de Ensino a Distância — Conselho Regional de Corretores de Imóveis (CRECI 2ª Região SP)</p>
+            <p class="text-[10px] text-slate-500">CRECI 2026 • Obter aplicativo para dispositivos móveis</p>
+        </div>
+    </footer>
+
+    <!-- LÓGICA JAVASCRIPT (REATIVIDADE) -->
+    <script>
+        // Inicializa Ícones do Lucide
+        lucide.createIcons();
+
+        // Estado Global
+        let currentTheme = localStorage.getItem('creci_theme') || 'light';
+        let currentProfile = 'corretor';
+
+        if (currentTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
+            lucide.createIcons();
+        }
+
+        // Alternador de Tema Escuro
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('creci_theme', 'light');
+                document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('creci_theme', 'dark');
+                document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
+            }
+            lucide.createIcons();
+        }
+
+        // Alternador de Abas de Navegação
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white/10', 'text-white', 'border-b-2', 'border-creci-gold');
+                btn.classList.add('text-sky-100');
+            });
+
+            document.getElementById(`sec-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-white/10', 'text-white', 'border-b-2', 'border-creci-gold');
+            }
+        }
+
+        // Alternador de Perfil (Simulador)
+        function switchProfile(profile) {
+            currentProfile = profile;
+            const adminTab = document.getElementById('tab-admin-panel');
+            const userRoleDisplay = document.getElementById('user-display-role');
+            
+            if (profile === 'corretor') {
+                adminTab.classList.add('hidden');
+                userRoleDisplay.innerText = 'CRECI 2ª Região - SP';
+                switchTab('todos-cursos');
+            } else if (profile === 'admin_master') {
+                adminTab.classList.remove('hidden');
+                document.getElementById('admin-panel-title').innerText = 'Painel do Administrador Master (COFECI)';
+                userRoleDisplay.innerText = 'Admin Master COFECI';
+                switchTab('admin-panel');
+            } else if (profile === 'admin_regional') {
+                adminTab.classList.remove('hidden');
+                document.getElementById('admin-panel-title').innerText = 'Painel do Administrador Regional (CRECI-SP)';
+                userRoleDisplay.innerText = 'Admin Regional CRECI-SP';
+                switchTab('admin-panel');
+            }
+        }
+
+        // Modais
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function openClassroom(courseId) { showModal('modal-classroom'); }
+        function showCertificateModal() { showModal('modal-certificado'); }
+
+        function openEnrollModal(type) {
+            if (type === 'hp12c') {
+                alert('Inscrição confirmada no curso HP12C! A Aula 1 já está liberada em "Meus Cursos".');
+                switchTab('meus-cursos');
+            } else if (type === 'ptam') {
+                alert('Solicitação de inscrição para curso Exclusivo com Prova Presencial enviada para validação da Regional CRECI-SP.');
+            }
+        }
+    </script>
 </body>
 </html>
