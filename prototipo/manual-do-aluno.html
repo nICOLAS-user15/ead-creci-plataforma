@@ -84,13 +84,39 @@
         kbd { font: 600 .78rem 'JetBrains Mono'; padding: .05rem .35rem; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--surface2); }
         footer.end { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 2rem; }
 
+        nav.toc summary { list-style: none; cursor: default; display: flex; justify-content: space-between; align-items: center; }
+        nav.toc summary::-webkit-details-marker { display: none; }
+        .toc-caret { display: none; font-size: .9rem; transition: transform .2s; }
+        .tbl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .tbl table { min-width: 460px; }
+        .to-top { position: fixed; right: 16px; bottom: 16px; width: 42px; height: 42px; border-radius: 99px; display: grid; place-items: center; background: var(--primary); color: #fff; text-decoration: none; font-weight: 700; box-shadow: 0 8px 24px rgb(0 0 0 / .2); opacity: 0; pointer-events: none; transition: opacity .2s; }
+        .to-top.show { opacity: 1; pointer-events: auto; }
+
+        /* Tablet */
         @media (max-width: 860px) {
             .layout { grid-template-columns: 1fr; gap: 1rem; padding-top: 1.1rem; }
-            nav.toc { position: static; }
-            .hero h1 { font-size: 1.6rem; }
-            section.card { padding: 1.1rem 1rem; }
-            .hide-sm { display: none; }
+            nav.toc { position: sticky; top: 62px; z-index: 5; padding: .7rem .9rem; box-shadow: 0 6px 18px rgb(0 0 0 / .06); }
+            nav.toc summary { cursor: pointer; }
+            .toc-caret { display: inline; }
+            nav.toc details[open] .toc-caret { transform: rotate(180deg); }
+            nav.toc ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 .5rem; max-height: 60vh; overflow-y: auto; }
+            .hero h1 { font-size: 1.7rem; }
         }
+        /* Celular */
+        @media (max-width: 640px) {
+            body { font-size: 14.5px; }
+            .top-inner { padding: .55rem .9rem; gap: .5rem; }
+            .hide-sm { display: none; }
+            .layout { padding: .9rem .75rem 3rem; }
+            nav.toc ol { grid-template-columns: 1fr; }
+            .hero { margin-bottom: 1.1rem; }
+            .hero h1 { font-size: 1.5rem; }
+            section.card { padding: 1.05rem .95rem; border-radius: 12px; }
+            section.card h2 { font-size: 1.08rem; }
+            ol.steps li { padding: .6rem .7rem; }
+            .note { flex-direction: column; gap: .3rem; }
+        }
+        @media (max-width: 380px) { .hide-xs { display: none; } }
         @media print {
             header.top, nav.toc { display: none; }
             .layout { display: block; padding: 0; }
@@ -105,15 +131,16 @@
             <div class="mark">EAD</div>
             <div><b>EAD <span>CRECI</span></b> <span class="mono hide-sm" style="margin-left:.4rem">Manual do Aluno</span></div>
             <div class="spacer"></div>
-            <button class="btn" onclick="toggleTheme()" aria-label="Alternar tema claro/escuro">◐ Tema</button>
-            <button class="btn" onclick="window.print()">Imprimir</button>
-            <a class="btn hide-sm" href="index.html">Ir para a plataforma</a>
+            <button class="btn" onclick="toggleTheme()" aria-label="Alternar tema claro/escuro">◐ <span class="hide-xs">Tema</span></button>
+            <button class="btn hide-sm" onclick="window.print()">Imprimir</button>
+            <a class="btn" href="index.html" aria-label="Ir para a plataforma">← <span class="hide-xs">Plataforma</span></a>
         </div>
     </header>
 
     <div class="layout">
         <nav class="toc" aria-label="Sumário">
-            <div class="mono">Sumário</div>
+            <details id="toc-details" open>
+            <summary class="mono">Sumário <span class="toc-caret" aria-hidden="true">▾</span></summary>
             <ol>
                 <li><a href="#primeiro-acesso">Primeiro acesso</a></li>
                 <li><a href="#navegacao">Conhecendo a tela</a></li>
@@ -126,6 +153,7 @@
                 <li><a href="#acessibilidade">Tema e acessibilidade</a></li>
                 <li><a href="#faq">Dúvidas frequentes</a></li>
             </ol>
+            </details>
         </nav>
 
         <main>
@@ -140,7 +168,7 @@
                 <h2>Primeiro acesso</h2>
                 <p>A plataforma não usa senha. Você recebe um <strong>link de acesso</strong> no seu e-mail institucional.</p>
                 <ol class="steps">
-                    <li><span>Na tela inicial, clique no cartão da sua <strong>Regional</strong> (por exemplo, CRECI-SP · 2ª Região) e em <strong>Acessar</strong>.</span></li>
+                    <li><span>Na tela inicial, clique no cartão da sua <strong>Regional</strong> (por exemplo, CRECI-SP · 2ª Região) e em <strong>Acessar</strong>. São 27 Regionais; use a busca para encontrar a sua pela sigla, pelo estado ou pelo número da região.</span></li>
                     <li><span>Digite a primeira parte do seu e-mail institucional. O final <strong>@creci.org.br</strong> já vem preenchido. Use só letras, números, ponto ou sublinhado.</span></li>
                     <li><span>Clique em <strong>Receber link de acesso</strong> e abra o e-mail que chegou na sua caixa de entrada.</span></li>
                     <li><span>Clique no link do e-mail. Ele vale por <strong>20 minutos</strong> e só pode ser usado uma vez.</span></li>
@@ -153,29 +181,29 @@
                 <div class="mono">02</div>
                 <h2>Conhecendo a tela</h2>
                 <p>O menu tem três áreas principais:</p>
-                <table>
+                <div class="tbl"><table>
                     <thead><tr><th>Área</th><th>Para que serve</th></tr></thead>
                     <tbody>
                         <tr><td><strong>Meus Cursos</strong></td><td>Cursos em andamento, próxima aula, avisos importantes e cursos já concluídos.</td></tr>
                         <tr><td><strong>Todos os Cursos</strong></td><td>Catálogo completo, com busca e filtros por modalidade, categoria e situação.</td></tr>
                         <tr><td><strong>Meus Certificados</strong></td><td>Emissão em PDF e validação de certificados por código.</td></tr>
                     </tbody>
-                </table>
+                </table></div>
                 <p>No <strong>computador</strong>, o menu fica à esquerda e pode ser recolhido pelo botão ☰. No <strong>celular</strong>, use a barra fixa na parte de baixo da tela.</p>
-                <p>No canto superior direito ficam o <strong>sino de notificações</strong> (aulas liberadas, notas, status do PTAM), o ajuste do tamanho do texto (<strong>AA</strong>), o botão de tema e a <strong>bolinha do seu perfil</strong>, onde estão Meu perfil, este Manual e Sair.</p>
+                <p>No canto superior direito ficam o <strong>sino de notificações</strong> (aulas liberadas, notas, status do PTAM), o ajuste do tamanho do texto (<strong>AA</strong>), o botão de tema (lua/sol) e a <strong>bolinha do seu perfil</strong>, onde estão Meu perfil, este Manual e Sair.</p>
             </section>
 
             <section class="card" id="inscricao">
                 <div class="mono">03</div>
                 <h2>Inscrição em cursos</h2>
                 <p>Existem dois tipos de curso:</p>
-                <table>
+                <div class="tbl"><table>
                     <thead><tr><th>Tipo</th><th>Como funciona</th></tr></thead>
                     <tbody>
                         <tr><td><span class="badge b-blue">Padrão</span></td><td>Abertos a todos (nacionais) ou aos corretores de uma Regional. A inscrição é imediata: clique em <strong>Inscrever-se</strong>.</td></tr>
                         <tr><td><span class="badge b-warn">Exclusivo</span></td><td>Turmas fechadas da sua Regional, com número de vagas e cronograma fixo. Clique em <strong>Solicitar vaga</strong> e aguarde a aprovação. Turmas cheias aparecem como <em>Turma lotada</em>.</td></tr>
                     </tbody>
-                </table>
+                </table></div>
                 <div class="note info"><strong>Atenção</strong><span>Depois de concluir um curso, você <strong>não pode se inscrever nele de novo</strong>, mas o conteúdo continua disponível em <strong>Consultar</strong>.</span></div>
             </section>
 
@@ -218,7 +246,7 @@
                     <li><span>Clique em <strong>Selecionar arquivo PDF</strong>. Só são aceitos arquivos <strong>.pdf de até 10 MB</strong>.</span></li>
                     <li><span>Acompanhe o status no curso e nas notificações.</span></li>
                 </ol>
-                <table>
+                <div class="tbl"><table>
                     <thead><tr><th>Status</th><th>O que significa</th><th>O que fazer</th></tr></thead>
                     <tbody>
                         <tr><td><span class="badge b-warn">Em análise</span></td><td>Recebido e aguardando os avaliadores.</td><td>Aguarde.</td></tr>
@@ -226,7 +254,7 @@
                         <tr><td><span class="badge b-blue">Reapresentar</span></td><td>Há ajustes técnicos a fazer.</td><td>Leia o comentário do avaliador, corrija e envie de novo.</td></tr>
                         <tr><td><span class="badge b-red">Rejeitado</span></td><td>Não atende aos critérios principais.</td><td>Procure a sua Regional.</td></tr>
                     </tbody>
-                </table>
+                </table></div>
             </section>
 
             <section class="card" id="certificados">
@@ -255,7 +283,7 @@
                 <div class="mono">09</div>
                 <h2>Tema e acessibilidade</h2>
                 <ul class="dots">
-                    <li><strong>Tema claro/escuro:</strong> botão de lua/sol no topo (ou no menu do perfil). A escolha fica salva no seu navegador.</li>
+                    <li><strong>Tema claro/escuro:</strong> botão de lua/sol no topo da plataforma e também na tela de acesso. A escolha fica salva no seu navegador.</li>
                     <li><strong>Tamanho do texto:</strong> botão <strong>AA</strong> no topo; alterna entre 90%, 100%, 110% e 120%.</li>
                     <li>A tecla <kbd>Esc</kbd> fecha janelas e menus abertos.</li>
                 </ul>
@@ -276,7 +304,22 @@
         </main>
     </div>
 
+    <a href="#" class="to-top" id="to-top" aria-label="Voltar ao topo">↑</a>
+
     <script>
+        // Sumário fechado por padrão no celular/tablet; fecha ao escolher uma seção
+        (function () {
+            var d = document.getElementById('toc-details');
+            var small = window.matchMedia ? window.matchMedia('(max-width: 860px)') : { matches: false };
+            function sync() { if (small.matches) d.removeAttribute('open'); else d.setAttribute('open', ''); }
+            sync();
+            if (small.addEventListener) small.addEventListener('change', sync);
+            d.querySelector('summary').addEventListener('click', function (e) { if (!small.matches) e.preventDefault(); });
+            d.addEventListener('click', function (e) { if (e.target.closest('a') && small.matches) d.removeAttribute('open'); });
+            var top = document.getElementById('to-top');
+            window.addEventListener('scroll', function () { top.classList.toggle('show', window.scrollY > 600); }, { passive: true });
+        })();
+
         function toggleTheme() {
             var dark = !document.documentElement.classList.contains('dark');
             document.documentElement.classList.toggle('dark', dark);

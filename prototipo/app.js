@@ -43,16 +43,14 @@ function initials(name) {
 
 /* ───────────────────────── DADOS (MOCK) ───────────────────────── */
 const REGIONAIS = [
-    { sigla: 'RJ', regiao: '1ª Região', estado: 'Rio de Janeiro' },
-    { sigla: 'SP', regiao: '2ª Região', estado: 'São Paulo' },
-    { sigla: 'RS', regiao: '3ª Região', estado: 'Rio Grande do Sul' },
-    { sigla: 'MG', regiao: '4ª Região', estado: 'Minas Gerais' },
-    { sigla: 'GO', regiao: '5ª Região', estado: 'Goiás' },
-    { sigla: 'PR', regiao: '6ª Região', estado: 'Paraná' },
-    { sigla: 'PE', regiao: '7ª Região', estado: 'Pernambuco' },
-    { sigla: 'DF', regiao: '8ª Região', estado: 'Distrito Federal' },
-    { sigla: 'BA', regiao: '9ª Região', estado: 'Bahia' },
-];
+    ['RJ', 1, 'Rio de Janeiro'], ['SP', 2, 'São Paulo'], ['RS', 3, 'Rio Grande do Sul'], ['MG', 4, 'Minas Gerais'],
+    ['GO', 5, 'Goiás'], ['PR', 6, 'Paraná'], ['PE', 7, 'Pernambuco'], ['DF', 8, 'Distrito Federal'],
+    ['BA', 9, 'Bahia'], ['SC', 11, 'Santa Catarina'], ['PA', 12, 'Pará'], ['ES', 13, 'Espírito Santo'],
+    ['MS', 14, 'Mato Grosso do Sul'], ['CE', 15, 'Ceará'], ['SE', 16, 'Sergipe'], ['RN', 17, 'Rio Grande do Norte'],
+    ['AM', 18, 'Amazonas'], ['MT', 19, 'Mato Grosso'], ['MA', 20, 'Maranhão'], ['PB', 21, 'Paraíba'],
+    ['AL', 22, 'Alagoas'], ['PI', 23, 'Piauí'], ['RO', 24, 'Rondônia'], ['TO', 25, 'Tocantins'],
+    ['AC', 26, 'Acre'], ['RR', 27, 'Roraima'], ['AP', 28, 'Amapá'],
+].map(([sigla, n, estado]) => ({ sigla, n, regiao: `${n}ª Região`, estado }));
 const regionalInfo = sigla => REGIONAIS.find(r => r.sigla === sigla) || { sigla, regiao: '', estado: '' };
 
 const PROFILES = {
@@ -247,6 +245,7 @@ function applyTheme(theme, persist = true) {
         btn.title = dark ? 'Mudar para tema claro' : 'Mudar para tema escuro';
     });
     if (persist) storageSet('ead-theme', theme);
+    if (typeof Scene !== 'undefined') Scene.onTheme();
 }
 
 function toggleTheme() {
@@ -280,10 +279,15 @@ function buildIsoPattern(stroke) {
 }
 
 /* ───────────────────────── FUNDO ANIMADO DO LOGIN ─────────────────────────
-   Cena minimalista em traço fino: skyline de prédios e casas com janelas que
-   acendem e apagam (estudo à noite) e ícones de estudo e imóveis (capelo,
-   livro, lápis, casa, chave, prédio, certificado, pino de mapa) subindo
-   devagar. Respeita "reduzir movimento": desenha um quadro estático. */
+   Cena minimalista em traço fino, a mesma nos dois temas (só mudam as cores):
+   • skyline de prédios e casas que "sobe" ao abrir a página, com janelas que
+     acendem e apagam devagar (estudo à noite);
+   • ícones de estudo e imóveis (capelo, livro, lápis, casa, chave, prédio,
+     certificado, pino de mapa) subindo lentamente;
+   • lua com estrelas piscando (escuro) ou sol com raios girando e nuvens (claro);
+   • de tempos em tempos, um aviãozinho de papel cruza a tela deixando rastro
+     pontilhado, e no escuro passa uma estrela cadente.
+   Com "reduzir movimento" ativo, desenha um quadro estático. */
 const SCENE_ICONS = {
     house: 'M3 11 L12 4 L21 11 M5 9.5 V20 H19 V9.5 M10 20 V14 H14 V20',
     cap: 'M2 9 L12 4.5 L22 9 L12 13.5 Z M6 11 V16 C8 17.5 10 18 12 18 C14 18 16 17.5 18 16 V11 M22 9 V14.5',
@@ -294,10 +298,27 @@ const SCENE_ICONS = {
     award: 'M17 8.5 A5 5 0 1 1 7 8.5 A5 5 0 1 1 17 8.5 Z M9.2 12.6 L7.8 21 L12 18.7 L16.2 21 L14.8 12.6',
     pin: 'M12 21 C12 21 5 14.5 5 9.5 A7 7 0 0 1 19 9.5 C19 14.5 12 21 12 21 Z M14.5 9.5 A2.5 2.5 0 1 1 9.5 9.5 A2.5 2.5 0 1 1 14.5 9.5 Z',
 };
+const PLANE_PATH = 'M2 11 L22 3 L15 21 L11 13 Z M11 13 L22 3';
+
+const SCENE_PALETTE = {
+    dark: {
+        icon: a => `rgba(165,198,245,${a})`, gold: a => `rgba(212,180,106,${a + 0.04})`,
+        bFill: 'rgba(5,16,40,0.55)', bStroke: 'rgba(140,175,230,0.20)',
+        winLit: a => `rgba(242,207,115,${a})`, winOff: a => `rgba(165,198,245,${a})`,
+        ground: 'rgba(212,180,106,0.25)', trail: 'rgba(212,180,106,0.35)', plane: 'rgba(230,237,247,0.45)',
+    },
+    light: {
+        icon: a => `rgba(29,78,160,${a * 1.15})`, gold: a => `rgba(154,116,32,${a + 0.06})`,
+        bFill: 'rgba(255,255,255,0.7)', bStroke: 'rgba(29,78,160,0.22)',
+        winLit: a => `rgba(217,150,30,${a * 0.85})`, winOff: a => `rgba(29,78,160,${a * 1.4})`,
+        ground: 'rgba(154,116,32,0.32)', trail: 'rgba(29,78,160,0.3)', plane: 'rgba(29,78,160,0.5)',
+    },
+};
 
 const Scene = {
-    canvas: null, ctx: null, raf: 0, last: 0, t: 0, w: 0, h: 0,
-    paths: {}, buildings: [], windows: [], floaters: [],
+    canvas: null, ctx: null, raf: 0, last: 0, t: 0, intro: 0, w: 0, h: 0, dark: true,
+    paths: {}, plane: null, buildings: [], windows: [], floaters: [], stars: [], clouds: [],
+    flight: null, nextFlight: 4, meteor: null, nextMeteor: 6,
 
     init() {
         this.canvas = $('#login-scene');
@@ -305,8 +326,15 @@ const Scene = {
         this.ctx = this.canvas.getContext('2d');
         if (!this.ctx || typeof Path2D !== 'function') { this.ctx = null; return; }
         Object.entries(SCENE_ICONS).forEach(([k, d]) => { this.paths[k] = new Path2D(d); });
+        this.plane = new Path2D(PLANE_PATH);
+        this.dark = document.documentElement.classList.contains('dark');
         this.resize();
         window.addEventListener('resize', () => this.resize());
+    },
+
+    onTheme() {
+        this.dark = document.documentElement.classList.contains('dark');
+        if (this.ctx && !this.raf) this.draw(0);
     },
 
     resize() {
@@ -321,12 +349,13 @@ const Scene = {
         this.draw(0);
     },
 
+    skylineMax() { return Math.min(190, this.h * 0.24); },
+
     layout() {
         let seed = 20261111;
         const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-        const maxH = Math.min(190, this.h * 0.24);
+        const maxH = this.skylineMax();
 
-        // Skyline determinístico (não "pula" a cada resize)
         this.buildings = [];
         let x = -8;
         while (x < this.w + 8) {
@@ -337,33 +366,37 @@ const Scene = {
             x += bw + 5 + rnd() * 12;
         }
 
-        // Janelas das torres
         this.windows = [];
-        this.buildings.filter(b => !b.house).forEach(b => {
+        this.buildings.forEach((b, bi) => {
+            if (b.house) return;
             const cols = Math.max(1, Math.floor((b.bw - 10) / 11));
             const rows = Math.max(1, Math.floor((b.bh - 14) / 15));
             for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-                this.windows.push({
-                    x: b.x + 7 + c * 11, y: this.h - b.bh + 9 + r * 15,
-                    lit: rnd() < 0.2, phase: rnd() * Math.PI * 2, speed: 0.15 + rnd() * 0.5,
-                });
+                this.windows.push({ bi, dx: 7 + c * 11, dy: 9 + r * 15, lit: rnd() < 0.2, phase: rnd() * Math.PI * 2, speed: 0.15 + rnd() * 0.5 });
             }
         });
 
-        // Ícones flutuantes
+        const skyH = this.h - maxH;
+        this.stars = Array.from({ length: Math.round(Math.min(70, this.w / 22)) }, () => ({
+            x: rnd() * this.w, y: rnd() * skyH * 0.75, r: 0.6 + rnd() * 0.9, phase: rnd() * Math.PI * 2, speed: 0.6 + rnd() * 1.6,
+        }));
+        this.clouds = Array.from({ length: this.w > 900 ? 4 : 2 }, (_, i) => ({
+            x: rnd() * this.w, y: 60 + rnd() * skyH * 0.45, s: 0.7 + rnd() * 0.6, speed: 5 + rnd() * 7 + i,
+        }));
+
         const n = Math.round(Math.min(20, Math.max(8, (this.w * this.h) / 85000)));
         this.floaters = Array.from({ length: n }, () => this.spawn(true));
     },
 
     spawn(initial) {
         const keys = Object.keys(SCENE_ICONS);
-        const skylineTop = this.h - Math.min(190, this.h * 0.24);
+        const skylineTop = this.h - this.skylineMax();
         return {
             icon: keys[Math.floor(Math.random() * keys.length)],
             x: Math.random() * this.w,
             y: initial ? Math.random() * skylineTop : this.h + 30,
             size: 18 + Math.random() * 20,
-            speed: 5 + Math.random() * 9,          // px por segundo
+            speed: 5 + Math.random() * 9,
             rot: (Math.random() - 0.5) * 0.6,
             vr: (Math.random() - 0.5) * 0.08,
             alpha: 0.07 + Math.random() * 0.09,
@@ -372,12 +405,122 @@ const Scene = {
         };
     },
 
+    drawCelestial(p) {
+        const { ctx, w, h, t } = this;
+        const r = w < 640 ? 20 : 30;
+        const cx = w * (w < 640 ? 0.86 : 0.9), cy = h * 0.16 + Math.sin(t * 0.3) * 4;
+        const glow = ctx.createRadialGradient(cx, cy, r * 0.5, cx, cy, r * 3.2);
+        glow.addColorStop(0, this.dark ? 'rgba(200,215,245,0.14)' : 'rgba(244,190,70,0.22)');
+        glow.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(cx, cy, r * 3.2, 0, Math.PI * 2); ctx.fill();
+
+        if (this.dark) {
+            // Lua crescente
+            ctx.save();
+            ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+            ctx.fillStyle = 'rgba(226,234,248,0.16)'; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath(); ctx.arc(cx + r * 0.45, cy - r * 0.25, r * 0.88, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+            ctx.strokeStyle = 'rgba(226,234,248,0.22)'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI * 0.05, Math.PI * 1.45); ctx.stroke();
+        } else {
+            // Sol com raios girando
+            ctx.fillStyle = 'rgba(244,190,70,0.20)'; ctx.strokeStyle = 'rgba(217,150,30,0.5)'; ctx.lineWidth = 1.2;
+            ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            ctx.lineCap = 'round';
+            for (let i = 0; i < 12; i++) {
+                const a = t * 0.12 + (i * Math.PI) / 6;
+                ctx.beginPath();
+                ctx.moveTo(cx + Math.cos(a) * (r + 7), cy + Math.sin(a) * (r + 7));
+                ctx.lineTo(cx + Math.cos(a) * (r + 15), cy + Math.sin(a) * (r + 15));
+                ctx.stroke();
+            }
+        }
+    },
+
+    drawCloud(c) {
+        const { ctx } = this;
+        const s = c.s;
+        ctx.save();
+        ctx.translate(c.x, c.y);
+        ctx.scale(s, s);
+        ctx.beginPath();
+        ctx.moveTo(-40, 12);
+        ctx.arc(-22, 4, 14, Math.PI * 0.75, Math.PI * 1.6);
+        ctx.arc(0, -4, 20, Math.PI * 1.15, Math.PI * 1.95);
+        ctx.arc(26, 4, 14, Math.PI * 1.4, Math.PI * 0.25);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.strokeStyle = 'rgba(29,78,160,0.16)';
+        ctx.lineWidth = 1 / s;
+        ctx.fill(); ctx.stroke();
+        ctx.restore();
+    },
+
+    updateEvents(dt) {
+        const { w, h } = this;
+        // Aviãozinho de papel
+        if (!this.flight) {
+            this.nextFlight -= dt;
+            if (this.nextFlight <= 0) {
+                const y0 = h * (0.45 + Math.random() * 0.2);
+                this.flight = { p: 0, dur: 7 + Math.random() * 3, x0: -40, y0, x1: w + 40, y1: y0 - h * (0.2 + Math.random() * 0.15), arc: 40 + Math.random() * 50 };
+            }
+        } else {
+            this.flight.p += dt / this.flight.dur;
+            if (this.flight.p >= 1) { this.flight = null; this.nextFlight = 8 + Math.random() * 6; }
+        }
+        // Estrela cadente (só no escuro)
+        if (this.dark) {
+            if (!this.meteor) {
+                this.nextMeteor -= dt;
+                if (this.nextMeteor <= 0) this.meteor = { p: 0, x: w * (0.2 + Math.random() * 0.6), y: h * (0.05 + Math.random() * 0.2), len: 120 + Math.random() * 80 };
+            } else {
+                this.meteor.p += dt / 1.1;
+                if (this.meteor.p >= 1) { this.meteor = null; this.nextMeteor = 7 + Math.random() * 8; }
+            }
+        }
+    },
+
+    flightPoint(f, p) {
+        return { x: f.x0 + (f.x1 - f.x0) * p, y: f.y0 + (f.y1 - f.y0) * p - Math.sin(p * Math.PI) * f.arc };
+    },
+
     draw(dt) {
         const { ctx, w, h } = this;
         if (!ctx || !w) return;
+        const pal = this.dark ? SCENE_PALETTE.dark : SCENE_PALETTE.light;
+        if (dt) this.updateEvents(dt);
         ctx.clearRect(0, 0, w, h);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+
+        // Céu: estrelas (escuro) ou nuvens (claro), e lua/sol
+        if (this.dark) {
+            this.stars.forEach(s => {
+                const a = 0.12 + 0.38 * (0.5 + 0.5 * Math.sin(this.t * s.speed + s.phase));
+                ctx.fillStyle = `rgba(226,234,248,${a})`;
+                ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+            });
+        } else {
+            this.clouds.forEach(c => {
+                if (dt) { c.x += c.speed * dt; if (c.x > w + 80) c.x = -80; }
+                this.drawCloud(c);
+            });
+        }
+        this.drawCelestial();
+
+        if (this.meteor && this.dark) {
+            const m = this.meteor;
+            const hx = m.x + m.p * m.len * 1.6, hy = m.y + m.p * m.len * 0.6;
+            const g = ctx.createLinearGradient(hx - m.len * 0.8, hy - m.len * 0.3, hx, hy);
+            g.addColorStop(0, 'rgba(226,234,248,0)');
+            g.addColorStop(1, `rgba(226,234,248,${0.6 * (1 - m.p)})`);
+            ctx.strokeStyle = g; ctx.lineWidth = 1.4;
+            ctx.beginPath(); ctx.moveTo(hx - m.len * 0.8, hy - m.len * 0.3); ctx.lineTo(hx, hy); ctx.stroke();
+        }
 
         // Ícones de estudo e imóveis
         this.floaters.forEach((f, i) => {
@@ -391,39 +534,67 @@ const Scene = {
             ctx.scale(s, s);
             ctx.translate(-12, -12);
             ctx.lineWidth = 1.4 / s;
-            ctx.strokeStyle = f.gold ? `rgba(212,180,106,${f.alpha + 0.04})` : `rgba(165,198,245,${f.alpha})`;
+            ctx.strokeStyle = f.gold ? pal.gold(f.alpha) : pal.icon(f.alpha);
             ctx.stroke(this.paths[f.icon]);
             ctx.restore();
         });
 
-        // Skyline em traço (planta de fachada)
+        // Aviãozinho de papel com rastro pontilhado
+        if (this.flight) {
+            const f = this.flight;
+            ctx.save();
+            ctx.setLineDash([3, 6]);
+            ctx.strokeStyle = pal.trail; ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            const start = Math.max(0, f.p - 0.35);
+            for (let q = start; q <= f.p; q += 0.01) { const pt = this.flightPoint(f, q); if (q === start) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); }
+            ctx.stroke();
+            ctx.restore();
+            const pt = this.flightPoint(f, f.p), nx = this.flightPoint(f, Math.min(1, f.p + 0.01));
+            ctx.save();
+            ctx.translate(pt.x, pt.y);
+            ctx.rotate(Math.atan2(nx.y - pt.y, nx.x - pt.x) + 0.38);
+            ctx.scale(1.3, 1.3);
+            ctx.translate(-12, -12);
+            ctx.lineWidth = 1.2; ctx.strokeStyle = pal.plane;
+            ctx.stroke(this.plane);
+            ctx.restore();
+        }
+
+        // Skyline sobe ao abrir (intro), depois fica parado
         ctx.lineWidth = 1;
-        this.buildings.forEach(b => {
-            const top = h - b.bh;
-            ctx.fillStyle = 'rgba(5,16,40,0.55)';
-            ctx.strokeStyle = 'rgba(140,175,230,0.20)';
+        const grow = this.buildings.map((b, i) => {
+            const k = Math.min(1, Math.max(0, (this.intro - i * 0.035) / 0.9));
+            return 1 - Math.pow(1 - k, 3);
+        });
+        this.buildings.forEach((b, i) => {
+            const bh = b.bh * grow[i];
+            if (bh < 1) return;
+            const top = h - bh;
+            ctx.fillStyle = pal.bFill;
+            ctx.strokeStyle = pal.bStroke;
             ctx.beginPath();
             if (b.house) {
-                const roof = b.bh * 0.45;
+                const roof = bh * 0.45;
                 ctx.moveTo(b.x, h); ctx.lineTo(b.x, top + roof); ctx.lineTo(b.x + b.bw / 2, top); ctx.lineTo(b.x + b.bw, top + roof); ctx.lineTo(b.x + b.bw, h);
                 ctx.fill(); ctx.stroke();
-                ctx.strokeRect(b.x + b.bw / 2 - 4.5, h - 13, 9, 13);   // porta
+                if (grow[i] === 1) ctx.strokeRect(b.x + b.bw / 2 - 4.5, h - 13, 9, 13);
             } else {
-                ctx.rect(b.x + 0.5, top + 0.5, b.bw, b.bh);
+                ctx.rect(b.x + 0.5, top + 0.5, b.bw, bh);
                 ctx.fill(); ctx.stroke();
-                if (b.antenna) { ctx.beginPath(); ctx.moveTo(b.x + b.bw / 2, top); ctx.lineTo(b.x + b.bw / 2, top - 14); ctx.stroke(); }
+                if (b.antenna && grow[i] === 1) { ctx.beginPath(); ctx.moveTo(b.x + b.bw / 2, top); ctx.lineTo(b.x + b.bw / 2, top - 14); ctx.stroke(); }
             }
         });
 
-        // Janelas acendendo e apagando devagar
         this.windows.forEach(win => {
+            if (grow[win.bi] < 1) return;
+            const b = this.buildings[win.bi];
             const a = win.lit ? 0.10 + 0.32 * (0.5 + 0.5 * Math.sin(this.t * win.speed + win.phase)) : 0.035;
-            ctx.fillStyle = win.lit ? `rgba(242,207,115,${a})` : `rgba(165,198,245,${a})`;
-            ctx.fillRect(win.x, win.y, 5, 7);
+            ctx.fillStyle = win.lit ? pal.winLit(a) : pal.winOff(a);
+            ctx.fillRect(b.x + win.dx, h - b.bh + win.dy, 5, 7);
         });
 
-        // Linha do chão
-        ctx.strokeStyle = 'rgba(212,180,106,0.25)';
+        ctx.strokeStyle = pal.ground;
         ctx.beginPath(); ctx.moveTo(0, h - 0.5); ctx.lineTo(w, h - 0.5); ctx.stroke();
     },
 
@@ -431,17 +602,20 @@ const Scene = {
         const dt = this.last ? Math.min(0.05, (ts - this.last) / 1000) : 0;
         this.last = ts;
         this.t += dt;
+        this.intro += dt;
         this.draw(dt);
-        this.raf = requestAnimationFrame(t => this.loop(t));
+        this.raf = requestAnimationFrame(tt => this.loop(tt));
     },
 
     start() {
         if (!this.ctx) return;
         this.stop();
+        this.dark = document.documentElement.classList.contains('dark');
+        this.intro = REDUCED_MOTION ? 99 : 0;
         this.resize();
         if (REDUCED_MOTION) return;
         this.last = 0;
-        this.raf = requestAnimationFrame(t => this.loop(t));
+        this.raf = requestAnimationFrame(tt => this.loop(tt));
     },
 
     stop() {
@@ -452,12 +626,9 @@ const Scene = {
 
 /* ───────────────────────── LOGIN ───────────────────────── */
 function renderLoginOptions() {
-    $('#regional-grid').innerHTML = REGIONAIS.map(r => `
-        <button class="regional-card" onclick="selectRegional('${r.sigla}')" aria-label="Acessar CRECI-${r.sigla}, ${r.regiao}, ${r.estado}">
-            <span class="ead-badge" aria-hidden="true"><span><b>EAD</b><small>CRECI</small></span></span>
-            <b>CRECI-${r.sigla}</b><small>${r.regiao}</small><em>${r.estado}</em>
-            <span class="regional-cta">Acessar</span>
-        </button>`).join('');
+    renderRegionalCards(REGIONAIS);
+    const count = $('#regional-count');
+    if (count) count.textContent = REGIONAIS.length;
 
     $('#profile-options').innerHTML = Object.entries(PROFILES).map(([key, p]) => `
         <button class="profile-option" onclick="selectProfile('${key}')">
@@ -465,6 +636,29 @@ function renderLoginOptions() {
             <span><b>${p.label}</b><small>${p.desc}</small></span>
         </button>`).join('');
     icons();
+}
+
+function renderRegionalCards(list) {
+    const grid = $('#regional-grid');
+    if (!grid) return;
+    grid.innerHTML = list.length ? list.map((r, i) => `
+        <button class="regional-card" style="--i:${i}" onclick="selectRegional('${r.sigla}')" aria-label="Acessar CRECI-${r.sigla}, ${r.regiao}, ${r.estado}">
+            <span class="ead-badge" aria-hidden="true"><span><b>EAD</b><small>CRECI</small></span></span>
+            <b>CRECI-${r.sigla}</b><small>${r.regiao}</small><em>${r.estado}</em>
+            <span class="regional-cta">Acessar <i data-lucide="arrow-right"></i></span>
+        </button>`).join('')
+        : '<p class="regional-empty">Nenhuma Regional encontrada. Tente a sigla (ex.: SP) ou o nome do estado.</p>';
+    icons();
+}
+
+// Busca por sigla, estado ou número da região (ignora acentos)
+function filterRegionals(query) {
+    const q = normalize(String(query || '').trim()).replace(/^creci-?/, '');
+    if (!q) return renderRegionalCards(REGIONAIS);
+    const exact = REGIONAIS.filter(r => normalize(r.sigla) === q); // sigla exata tem prioridade (ex.: 'sp' não traz Espírito Santo)
+    if (exact.length) return renderRegionalCards(exact);
+    renderRegionalCards(REGIONAIS.filter(r =>
+        normalize(r.sigla) === q || normalize(r.estado).includes(q) || normalize(r.sigla).startsWith(q) || String(r.n) === q.replace(/[^0-9]/g, '')));
 }
 
 function showLoginStep(step) {
@@ -606,6 +800,8 @@ function logout() {
     $('#app-main').hidden = true;
     $('#bottom-nav').hidden = true;
     $('#app-login').hidden = false;
+    const search = $('#regional-search');
+    if (search) { search.value = ''; renderRegionalCards(REGIONAIS); }
     showLoginStep(1);
     Scene.start();
 }
@@ -653,7 +849,7 @@ function toggleNavSection(btn) {
 }
 
 function toggleSidebar(force) {
-    const mobile = window.innerWidth < 768;
+    const mobile = window.innerWidth < 1024; // celular e tablet usam gaveta
     if (force === false) { document.body.classList.remove('sidebar-open'); return; }
     if (mobile) document.body.classList.toggle('sidebar-open');
     else document.body.classList.toggle('sidebar-collapsed');

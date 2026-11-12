@@ -80,9 +80,15 @@
                 <div class="login-divider hidden md:block"></div>
                 <div class="brand-tag hidden md:block" style="margin:0">Plataforma de Ensino<br>a Distância</div>
             </div>
-            <a class="login-help" href="manual-do-aluno.html" target="_blank" rel="noopener" title="Abrir o Manual do Aluno em nova aba">
-                <i data-lucide="life-buoy"></i> Ajuda<span class="hidden sm:inline">&nbsp;· Manual do Aluno</span>
-            </a>
+            <div class="login-actions">
+                <!-- Mesmo alternador de tema da plataforma (classe .theme-toggle → toggleTheme) -->
+                <button class="login-theme theme-toggle" onclick="toggleTheme()" aria-label="Alternar tema claro/escuro" title="Alternar tema">
+                    <i data-lucide="moon" class="icon-moon"></i><i data-lucide="sun" class="icon-sun"></i>
+                </button>
+                <a class="login-help" href="manual-do-aluno.html" target="_blank" rel="noopener" title="Abrir o Manual do Aluno em nova aba">
+                    <i data-lucide="life-buoy"></i> Ajuda<span class="help-long">&nbsp;· Manual do Aluno</span>
+                </a>
+            </div>
         </header>
 
         <main class="login-main">
@@ -112,8 +118,14 @@
                 <section id="login-step-1" class="animate-in">
                     <div class="login-kicker blue">Área do aluno</div>
                     <h2 class="login-title">Selecione a sua Regional</h2>
-                    <p class="login-desc">Escolha o conselho onde você tem inscrição ativa.</p>
-                    <div class="regional-grid" id="regional-grid"></div>
+                    <p class="login-desc">Escolha o conselho onde você tem inscrição ativa. São <span id="regional-count">27</span> Regionais.</p>
+                    <div class="regional-search">
+                        <i data-lucide="search"></i>
+                        <input id="regional-search" type="search" placeholder="Buscar por sigla, estado ou número da região" aria-label="Buscar Regional" oninput="filterRegionals(this.value)" autocomplete="off">
+                    </div>
+                    <div class="regional-scroll">
+                        <div class="regional-grid" id="regional-grid"></div>
+                    </div>
                 </section>
 
                 <!-- Passo 2: Perfil (apenas no protótipo) -->
@@ -160,14 +172,14 @@
                     <button class="login-back" onclick="showLoginStep(3)"><i data-lucide="arrow-left"></i> Usar outro e-mail</button>
                     <div class="mail-sent"><i data-lucide="mail-check"></i></div>
                     <h2 class="login-title text-center">Verifique seu e-mail</h2>
-                    <p class="login-desc text-center">Enviamos o link de acesso para<br><b class="text-white" id="sent-email"></b></p>
-                    <p class="label-mono text-center" style="color:rgb(255 255 255 / .5)">Link expira em</p>
+                    <p class="login-desc text-center">Enviamos o link de acesso para<br><b class="sent-email" id="sent-email"></b></p>
+                    <p class="label-mono text-center expire-label">Link expira em</p>
                     <div class="countdown" id="magic-countdown" aria-live="polite">20:00</div>
                     <button id="btn-open-magic" class="btn btn-primary btn-block login-submit mt-4" onclick="openMagicLink()">
                         <i data-lucide="log-in"></i> Abrir link de acesso
                     </button>
                     <p class="text-center mt-2"><span class="proto-tag">Simula o clique no link do e-mail</span></p>
-                    <p class="text-center mt-4 text-xs" style="color:rgb(255 255 255 / .6)">
+                    <p class="text-center mt-4 text-xs resend-row">
                         Não recebeu? <button class="link-btn" id="btn-resend" onclick="resendLink()">Reenviar link</button>
                     </p>
                 </section>
@@ -295,7 +307,6 @@
                                 </div>
                                 <div class="py-1">
                                     <button class="dropdown-item" onclick="closeDropdowns(); openProfile()"><i data-lucide="user-round-cog"></i> Meu perfil</button>
-                                    <button class="dropdown-item" onclick="toggleTheme()"><i data-lucide="sun-moon"></i> Alternar tema</button>
                                     <button class="dropdown-item sm:hidden" onclick="cycleFontScale()"><i data-lucide="type"></i> Tamanho do texto</button>
                                     <a class="dropdown-item" href="manual-do-aluno.html" target="_blank" rel="noopener" onclick="closeDropdowns()">
                                         <i data-lucide="life-buoy"></i> Ajuda · Manual do Aluno <i data-lucide="external-link" class="ml-auto" style="width:13px;height:13px"></i>
