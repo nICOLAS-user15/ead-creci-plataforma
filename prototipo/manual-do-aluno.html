@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual do Aluno — EAD CRECI</title>
+    <script>
+        (function () {
+            var theme = null;
+            try { theme = localStorage.getItem('ead-theme'); } catch (e) {}
+            if (!theme) theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            if (theme === 'dark') document.documentElement.classList.add('dark');
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f1f4f9; --surface: #ffffff; --surface2: #f6f8fb; --line: #dae1ec;
+            --ink: #0f1b2d; --muted: #586880; --primary: #1d5fbf; --gold: #96741a;
+            --ok: #158048; --warn: #b06c06;
+            --brand: linear-gradient(90deg, #1d4ed8 0%, #3b82f6 58%, #dc2626 100%);
+            color-scheme: light;
+        }
+        .dark {
+            --bg: #09111f; --surface: #182438; --surface2: #1e2c43; --line: #2c3c57;
+            --ink: #e4ebf5; --muted: #92a3bd; --primary: #60a5fa; --gold: #d0b058;
+            --ok: #34c778; --warn: #eab308;
+            color-scheme: dark;
+        }
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.65 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+        a { color: var(--primary); }
+        .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: .66rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+
+        header.top { position: sticky; top: 0; z-index: 10; background: var(--surface); border-bottom: 1px solid var(--line); }
+        header.top::before { content: ''; display: block; height: 3px; background: var(--brand); }
+        .top-inner { max-width: 1120px; margin: 0 auto; padding: .7rem 1.25rem; display: flex; align-items: center; gap: .9rem; }
+        .mark { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #1d4ed8, #0c2848); color: #fff; display: grid; place-items: center; font: 800 .62rem 'Inter'; position: relative; flex-shrink: 0; }
+        .mark::after { content: ''; position: absolute; right: -3px; bottom: -3px; width: 11px; height: 11px; border-radius: 3px; background: #d4b46a; border: 2px solid var(--surface); }
+        .top b { font-weight: 800; }
+        .top b span { color: var(--gold); }
+        .spacer { flex: 1; }
+        .btn { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .8rem; border-radius: 7px; border: 1px solid var(--line); background: var(--surface2); color: var(--ink); font: 600 .78rem 'Inter'; cursor: pointer; text-decoration: none; }
+        .btn:hover { border-color: var(--primary); }
+
+        .layout { max-width: 1120px; margin: 0 auto; padding: 1.75rem 1.25rem 4rem; display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 2rem; align-items: start; }
+        nav.toc { position: sticky; top: 80px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: .9rem; }
+        nav.toc ol { list-style: none; margin: .6rem 0 0; padding: 0; counter-reset: s; }
+        nav.toc li { counter-increment: s; }
+        nav.toc a { display: flex; gap: .55rem; padding: .35rem .45rem; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: .84rem; }
+        nav.toc a::before { content: counter(s, decimal-leading-zero); font: 700 .66rem 'JetBrains Mono'; color: var(--primary); padding-top: .2rem; }
+        nav.toc a:hover { background: var(--surface2); color: var(--ink); }
+
+        .hero { border-left: 3px solid var(--primary); padding-left: 1rem; margin-bottom: 1.75rem; }
+        .hero h1 { margin: .3rem 0 .4rem; font-size: 2rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; }
+        .hero p { margin: 0; color: var(--muted); max-width: 640px; }
+
+        section.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 1.4rem 1.5rem; margin-bottom: 1rem; scroll-margin-top: 80px; }
+        section.card h2 { margin: .25rem 0 .8rem; font-size: 1.2rem; font-weight: 700; letter-spacing: -.01em; }
+        section.card h3 { margin: 1.2rem 0 .4rem; font-size: .98rem; }
+        section.card p { margin: .5rem 0; }
+        ol.steps { list-style: none; padding: 0; margin: .8rem 0; counter-reset: st; display: grid; gap: .55rem; }
+        ol.steps li { counter-increment: st; display: flex; gap: .75rem; align-items: flex-start; padding: .7rem .85rem; background: var(--surface2); border: 1px solid var(--line); border-radius: 8px; }
+        ol.steps li::before { content: counter(st); flex-shrink: 0; width: 24px; height: 24px; border-radius: 99px; display: grid; place-items: center; background: var(--primary); color: #fff; font: 700 .72rem 'JetBrains Mono'; margin-top: .1rem; }
+        ul.dots { padding-left: 1.2rem; margin: .5rem 0; }
+        ul.dots li { margin: .3rem 0; }
+        .note { display: flex; gap: .7rem; padding: .8rem 1rem; border-radius: 8px; border: 1px solid; margin: .9rem 0 .2rem; font-size: .9rem; }
+        .note strong { flex-shrink: 0; }
+        .note.info { border-color: color-mix(in srgb, var(--primary) 35%, transparent); background: color-mix(in srgb, var(--primary) 8%, transparent); }
+        .note.warn { border-color: color-mix(in srgb, var(--warn) 40%, transparent); background: color-mix(in srgb, var(--warn) 9%, transparent); }
+        table { width: 100%; border-collapse: collapse; font-size: .88rem; margin: .7rem 0; }
+        th { text-align: left; font: 600 .62rem 'JetBrains Mono'; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); background: var(--surface2); }
+        th, td { padding: .6rem .75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+        .badge { display: inline-block; padding: .1rem .45rem; border-radius: 5px; font: 700 .64rem 'Inter'; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+        .b-warn { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); }
+        .b-ok { background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); }
+        .b-blue { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
+        .b-red { background: color-mix(in srgb, #ef4444 14%, transparent); color: #ef4444; }
+        details { border: 1px solid var(--line); border-radius: 8px; padding: .65rem .9rem; margin: .5rem 0; background: var(--surface2); }
+        summary { cursor: pointer; font-weight: 600; }
+        kbd { font: 600 .78rem 'JetBrains Mono'; padding: .05rem .35rem; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--surface2); }
+        footer.end { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 2rem; }
+
+        @media (max-width: 860px) {
+            .layout { grid-template-columns: 1fr; gap: 1rem; padding-top: 1.1rem; }
+            nav.toc { position: static; }
+            .hero h1 { font-size: 1.6rem; }
+            section.card { padding: 1.1rem 1rem; }
+            .hide-sm { display: none; }
+        }
+        @media print {
+            header.top, nav.toc { display: none; }
+            .layout { display: block; padding: 0; }
+            body { background: #fff; color: #000; }
+            section.card { break-inside: avoid; border-color: #ccc; }
+        }
+    </style>
+</head>
+<body>
+    <header class="top">
+        <div class="top-inner">
+            <div class="mark">EAD</div>
+            <div><b>EAD <span>CRECI</span></b> <span class="mono hide-sm" style="margin-left:.4rem">Manual do Aluno</span></div>
+            <div class="spacer"></div>
+            <button class="btn" onclick="toggleTheme()" aria-label="Alternar tema claro/escuro">◐ Tema</button>
+            <button class="btn" onclick="window.print()">Imprimir</button>
+            <a class="btn hide-sm" href="index.html">Ir para a plataforma</a>
+        </div>
+    </header>
+
+    <div class="layout">
+        <nav class="toc" aria-label="Sumário">
+            <div class="mono">Sumário</div>
+            <ol>
+                <li><a href="#primeiro-acesso">Primeiro acesso</a></li>
+                <li><a href="#navegacao">Conhecendo a tela</a></li>
+                <li><a href="#inscricao">Inscrição em cursos</a></li>
+                <li><a href="#aulas">Aulas diárias e exercícios</a></li>
+                <li><a href="#exclusivos">Turmas exclusivas</a></li>
+                <li><a href="#ptam">Envio do PTAM</a></li>
+                <li><a href="#certificados">Certificados</a></li>
+                <li><a href="#perfil">Meu perfil</a></li>
+                <li><a href="#acessibilidade">Tema e acessibilidade</a></li>
+                <li><a href="#faq">Dúvidas frequentes</a></li>
+            </ol>
+        </nav>
+
+        <main>
+            <div class="hero">
+                <div class="mono">Ajuda · versão do protótipo</div>
+                <h1>Manual do Aluno</h1>
+                <p>Este guia explica, passo a passo, como entrar na plataforma, fazer os cursos, enviar o PTAM e emitir seus certificados.</p>
+            </div>
+
+            <section class="card" id="primeiro-acesso">
+                <div class="mono">01</div>
+                <h2>Primeiro acesso</h2>
+                <p>A plataforma não usa senha. Você recebe um <strong>link de acesso</strong> no seu e-mail institucional.</p>
+                <ol class="steps">
+                    <li><span>Na tela inicial, clique no cartão da sua <strong>Regional</strong> (por exemplo, CRECI-SP · 2ª Região) e em <strong>Acessar</strong>.</span></li>
+                    <li><span>Digite a primeira parte do seu e-mail institucional. O final <strong>@creci.org.br</strong> já vem preenchido. Use só letras, números, ponto ou sublinhado.</span></li>
+                    <li><span>Clique em <strong>Receber link de acesso</strong> e abra o e-mail que chegou na sua caixa de entrada.</span></li>
+                    <li><span>Clique no link do e-mail. Ele vale por <strong>20 minutos</strong> e só pode ser usado uma vez.</span></li>
+                </ol>
+                <div class="note info"><strong>Dica</strong><span>Não chegou? Confira a caixa de spam. Depois de 30 segundos aparece a opção <strong>Reenviar link</strong>; o link anterior deixa de valer.</span></div>
+                <div class="note warn"><strong>Protótipo</strong><span>Nesta versão de demonstração, o e-mail não é enviado de verdade: o botão <strong>Abrir link de acesso</strong> simula o clique. Há também um passo extra para escolher o perfil (corretor ou administrador), que no sistema real vem do cadastro.</span></div>
+            </section>
+
+            <section class="card" id="navegacao">
+                <div class="mono">02</div>
+                <h2>Conhecendo a tela</h2>
+                <p>O menu tem três áreas principais:</p>
+                <table>
+                    <thead><tr><th>Área</th><th>Para que serve</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Meus Cursos</strong></td><td>Cursos em andamento, próxima aula, avisos importantes e cursos já concluídos.</td></tr>
+                        <tr><td><strong>Todos os Cursos</strong></td><td>Catálogo completo, com busca e filtros por modalidade, categoria e situação.</td></tr>
+                        <tr><td><strong>Meus Certificados</strong></td><td>Emissão em PDF e validação de certificados por código.</td></tr>
+                    </tbody>
+                </table>
+                <p>No <strong>computador</strong>, o menu fica à esquerda e pode ser recolhido pelo botão ☰. No <strong>celular</strong>, use a barra fixa na parte de baixo da tela.</p>
+                <p>No canto superior direito ficam o <strong>sino de notificações</strong> (aulas liberadas, notas, status do PTAM), o ajuste do tamanho do texto (<strong>AA</strong>), o botão de tema e a <strong>bolinha do seu perfil</strong>, onde estão Meu perfil, este Manual e Sair.</p>
+            </section>
+
+            <section class="card" id="inscricao">
+                <div class="mono">03</div>
+                <h2>Inscrição em cursos</h2>
+                <p>Existem dois tipos de curso:</p>
+                <table>
+                    <thead><tr><th>Tipo</th><th>Como funciona</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="badge b-blue">Padrão</span></td><td>Abertos a todos (nacionais) ou aos corretores de uma Regional. A inscrição é imediata: clique em <strong>Inscrever-se</strong>.</td></tr>
+                        <tr><td><span class="badge b-warn">Exclusivo</span></td><td>Turmas fechadas da sua Regional, com número de vagas e cronograma fixo. Clique em <strong>Solicitar vaga</strong> e aguarde a aprovação. Turmas cheias aparecem como <em>Turma lotada</em>.</td></tr>
+                    </tbody>
+                </table>
+                <div class="note info"><strong>Atenção</strong><span>Depois de concluir um curso, você <strong>não pode se inscrever nele de novo</strong>, mas o conteúdo continua disponível em <strong>Consultar</strong>.</span></div>
+            </section>
+
+            <section class="card" id="aulas">
+                <div class="mono">04</div>
+                <h2>Aulas diárias e exercícios</h2>
+                <ul class="dots">
+                    <li>A <strong>Aula 1</strong> é liberada no <strong>dia seguinte</strong> à inscrição. Depois, abre <strong>uma aula por dia</strong>.</li>
+                    <li>Para abrir a próxima aula, você precisa concluir a anterior.</li>
+                    <li>A maioria das aulas tem um <strong>exercício</strong>. É preciso acertar pelo menos <strong>60%</strong>. Se não conseguir, revise o conteúdo e clique em <strong>Tentar novamente</strong>; não há limite de tentativas.</li>
+                    <li>Aulas trancadas mostram um cadeado e o motivo: <em>Libera amanhã</em> ou <em>Conclua a aula anterior</em>.</li>
+                </ul>
+                <h3>Como fazer uma aula</h3>
+                <ol class="steps">
+                    <li><span>Em <strong>Meus Cursos</strong>, clique em <strong>Continuar</strong> no curso.</span></li>
+                    <li><span>Escolha a aula liberada e assista ao vídeo até o fim.</span></li>
+                    <li><span>Responda o exercício e clique em <strong>Enviar respostas</strong>. Você vê na hora o que acertou e errou.</span></li>
+                </ol>
+                <div class="note warn"><strong>Protótipo</strong><span>O botão <strong>+1 dia</strong> simula a passagem do tempo, para testar a liberação diária das aulas.</span></div>
+            </section>
+
+            <section class="card" id="exclusivos">
+                <div class="mono">05</div>
+                <h2>Turmas exclusivas: prova presencial</h2>
+                <p>Além das aulas online, as turmas exclusivas têm uma <strong>prova presencial</strong> na sede da Regional.</p>
+                <ol class="steps">
+                    <li><span>Conclua as aulas online. A última aula do curso é a <strong>Prova presencial</strong>.</span></li>
+                    <li><span>Abra essa aula, escolha uma das datas disponíveis e clique em <strong>Confirmar agendamento</strong>. Você pode remarcar até a véspera.</span></li>
+                    <li><span>Depois da prova, a Regional lança a nota. É preciso tirar <strong>6,0 ou mais</strong>.</span></li>
+                </ol>
+                <p>O curso é concluído quando todas as exigências estiverem cumpridas: aulas online, prova presencial e, quando houver, o PTAM aprovado.</p>
+            </section>
+
+            <section class="card" id="ptam">
+                <div class="mono">06</div>
+                <h2>Envio do PTAM</h2>
+                <p>Nos cursos de avaliação imobiliária, você envia o <strong>Parecer Técnico de Avaliação Mercadológica (PTAM)</strong> pela própria sala de aula.</p>
+                <ol class="steps">
+                    <li><span>Abra o curso e vá até <strong>Envio do PTAM (PDF)</strong>.</span></li>
+                    <li><span>Clique em <strong>Selecionar arquivo PDF</strong>. Só são aceitos arquivos <strong>.pdf de até 10 MB</strong>.</span></li>
+                    <li><span>Acompanhe o status no curso e nas notificações.</span></li>
+                </ol>
+                <table>
+                    <thead><tr><th>Status</th><th>O que significa</th><th>O que fazer</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="badge b-warn">Em análise</span></td><td>Recebido e aguardando os avaliadores.</td><td>Aguarde.</td></tr>
+                        <tr><td><span class="badge b-ok">Concluído</span></td><td>Parecer aprovado.</td><td>Nada; você está apto à certificação.</td></tr>
+                        <tr><td><span class="badge b-blue">Reapresentar</span></td><td>Há ajustes técnicos a fazer.</td><td>Leia o comentário do avaliador, corrija e envie de novo.</td></tr>
+                        <tr><td><span class="badge b-red">Rejeitado</span></td><td>Não atende aos critérios principais.</td><td>Procure a sua Regional.</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="card" id="certificados">
+                <div class="mono">07</div>
+                <h2>Certificados</h2>
+                <p>Ao concluir um curso, o certificado aparece em <strong>Meus Certificados</strong>, todos na mesma tela.</p>
+                <ul class="dots">
+                    <li><strong>Emitir PDF</strong>: abre o certificado; use <strong>Imprimir / salvar PDF</strong> para baixar.</li>
+                    <li><strong>Copiar código</strong>: copia o código de validação (formato <code>0000-XXXX</code>).</li>
+                    <li><strong>Validar autenticidade</strong>: qualquer pessoa pode digitar o código e conferir nome, curso, carga horária e data.</li>
+                </ul>
+            </section>
+
+            <section class="card" id="perfil">
+                <div class="mono">08</div>
+                <h2>Meu perfil</h2>
+                <p>Clique na <strong>bolinha do perfil</strong> (canto superior direito) e em <strong>Meu perfil</strong>.</p>
+                <ul class="dots">
+                    <li><strong>Você pode alterar:</strong> foto (JPG, PNG ou WEBP de até 2 MB), telefone e data de nascimento.</li>
+                    <li><strong>Só a Regional altera:</strong> nome, número do CRECI, e-mail institucional e Regional.</li>
+                </ul>
+                <p>As mudanças só valem depois de clicar em <strong>Salvar alterações</strong>. <strong>Cancelar</strong> descarta tudo.</p>
+            </section>
+
+            <section class="card" id="acessibilidade">
+                <div class="mono">09</div>
+                <h2>Tema e acessibilidade</h2>
+                <ul class="dots">
+                    <li><strong>Tema claro/escuro:</strong> botão de lua/sol no topo (ou no menu do perfil). A escolha fica salva no seu navegador.</li>
+                    <li><strong>Tamanho do texto:</strong> botão <strong>AA</strong> no topo; alterna entre 90%, 100%, 110% e 120%.</li>
+                    <li>A tecla <kbd>Esc</kbd> fecha janelas e menus abertos.</li>
+                </ul>
+            </section>
+
+            <section class="card" id="faq">
+                <div class="mono">10</div>
+                <h2>Dúvidas frequentes</h2>
+                <details><summary>O link de acesso expirou. E agora?</summary><p>Volte à tela de acesso e peça um novo link. Cada link vale por 20 minutos.</p></details>
+                <details><summary>Por que não consigo abrir a próxima aula?</summary><p>As aulas abrem uma por dia, e só depois que você conclui a anterior com pelo menos 60% no exercício.</p></details>
+                <details><summary>Não encontro um curso exclusivo no catálogo.</summary><p>As turmas exclusivas aparecem apenas para corretores da Regional da turma. Confira se entrou com a Regional certa.</p></details>
+                <details><summary>Posso refazer um curso que já concluí?</summary><p>Não é possível se inscrever de novo, mas você pode consultar o conteúdo quando quiser.</p></details>
+                <details><summary>Meu PTAM voltou como "Reapresentar".</summary><p>Leia o comentário do avaliador no curso, corrija o documento e envie o novo PDF pelo mesmo lugar.</p></details>
+                <div class="note info"><strong>Suporte</strong><span>Se a dúvida continuar, procure o atendimento da sua Regional.</span></div>
+            </section>
+
+            <footer class="end">EAD CRECI · Sistema COFECI-CRECI · Manual do Aluno (protótipo)</footer>
+        </main>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            var dark = !document.documentElement.classList.contains('dark');
+            document.documentElement.classList.toggle('dark', dark);
+            try { localStorage.setItem('ead-theme', dark ? 'dark' : 'light'); } catch (e) {}
+        }
+    </script>
+</body>
+</html>
