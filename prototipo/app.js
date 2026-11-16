@@ -58,18 +58,18 @@ const PROFILES = {
         label: 'Corretor de Imóveis', short: 'corretor', icon: 'user-round',
         desc: 'Cursos, aulas diárias, envio de PTAM e certificados',
         perms: ['learn', 'catalog', 'validate'],
-        home: 'meus-cursos',
+        home: 'catalogo',
     },
     admin_regional: {
         label: 'Administrador Regional', short: 'administrador regional', icon: 'shield',
         desc: 'Alunos, turmas e pareceres apenas da sua Regional',
-        perms: ['ptam_queue', 'catalog', 'validate'],
+        perms: ['ptam_queue', 'catalog', 'validate', 'reports'],
         home: 'admin',
     },
     admin_master: {
         label: 'Administrador Master', short: 'administrador master', icon: 'shield-check',
         desc: 'Gestão global, todas as Regionais e importação de notas',
-        perms: ['ptam_queue', 'import_grades', 'catalog', 'validate', 'all_regions'],
+        perms: ['ptam_queue', 'import_grades', 'catalog', 'validate', 'all_regions', 'reports', 'create_course'],
         home: 'admin',
     },
 };
@@ -163,10 +163,10 @@ const PROGRESS = {
     simDay: SIM_DAY_START,
     enrollments: {
         // Inscrito há 3 dias: aulas 1–3 liberadas, aula 4 libera amanhã
-        c1: { enrolledDay: 7, lessons: { l1: { done: true, score: null } } },
+        c1: { enrolledDay: 7, lessons: { l1: { done: true, score: null, doneDay: 8 } } },
     },
     completed: { c3: { date: '15/05/2026' } },
-    pending: {},     // solicitações de vaga em turmas exclusivas
+    history: [],     // resultados encerrados (reprovações). RN-14: o histórico sobrevive à eliminação da inscrição
     exams: {},       // courseId → { date, place, score }
     noticeShown: {}, // avisos já exibidos
 };
@@ -230,6 +230,8 @@ const STATE = {
     importPreview: null,
     importHistory: [],
     fontScale: 100,
+    report: { q: '', from: '', to: '', courses: [], results: [], regionals: [] },
+    courseDraft: null,
 };
 
 const can = perm => !!STATE.profile && PROFILES[STATE.profile].perms.includes(perm);
@@ -899,7 +901,7 @@ function markAllNotifsRead() {
 }
 
 /* ───────────────────────── NAVEGAÇÃO ───────────────────────── */
-const VIEW_PERMS = { 'meus-cursos': 'learn', catalogo: 'catalog', certificados: 'validate', admin: 'ptam_queue', notas: 'import_grades' };
+const VIEW_PERMS = { 'meus-cursos': 'learn', catalogo: 'catalog', certificados: 'validate', admin: 'ptam_queue', notas: 'import_grades', relatorios: 'reports', 'criar-curso': 'create_course' };
 
 function switchView(view) {
     if (!STATE.loggedIn) return;
@@ -926,6 +928,8 @@ function renderView() {
         certificados: viewCertificados,
         admin: viewAdmin,
         notas: viewNotas,
+        relatorios: viewRelatorios,
+        'criar-curso': viewCriarCurso,
     };
     try {
         root.innerHTML = `<div class="animate-in">${(renderers[STATE.view] || viewMeusCursos)()}</div>`;
@@ -935,6 +939,7 @@ function renderView() {
     }
     if (STATE.view === 'catalogo') updateCatalogGrid();
     if (STATE.view === 'admin') updateAdminTable();
+    if (STATE.view === 'relatorios') updateReportTable();
     icons();
 }
 
@@ -986,15 +991,16 @@ function simDayControl() {
     </div>`;
 }
 
-/* ───────────────────────── REGRAS: CURSOS ───────────────────────── */
+/* ───────────────────────── REGRAS: CURSOS ─────────────────────────
+   A lógica de decisão (60 %, liberação de aulas, prazo) vive em regras.js
+   e é testada em tests/regras.test.js. Aqui ficam só o estado e a tela. */
 function isCompleted(courseId) { return !!PROGRESS.completed[courseId]; }
 function isEnrolled(courseId) { return !!PROGRESS.enrollments[courseId]; }
-function isPending(courseId) { return !!PROGRESS.pending[courseId]; }
+function wasFailed(courseId) { return PROGRESS.history.some(h => h.courseId === courseId && h.result === 'reprovado'); }
 
 function courseStatus(courseId) {
     if (isCompleted(courseId)) return 'completed';
     if (isEnrolled(courseId)) return 'enrolled';
-    if (isPending(courseId)) return 'pending';
     return 'available';
 }
 
@@ -1005,9 +1011,31 @@ function visibleCourses() {
         c.type === 'exclusivo' ? c.regional === STATE.regional : (c.scope === 'Nacional' || c.scope === STATE.regional));
 }
 
+// RN-07: prazo de participação do curso Padrão (dias a partir da inscrição). Padrão do protótipo: 30.
+function courseDeadlineDays(course) { return course.deadlineDays ?? 30; }
+function courseDeadlineDay(course, enr) { return Regras.diaLimiteCurso(enr.enrolledDay, courseDeadlineDays(course)); }
+
+// Acertos e total de questões de TODOS os exercícios do curso (RN-09). Só o Padrão usa isso no resultado.
+function courseTotals(course, enr) {
+    let acertos = 0, totalQuestoes = 0;
+    course.lessons.forEach(l => {
+        if (l.type === 'presencial' || !l.quiz) return;
+        totalQuestoes += Regras.QUESTOES_POR_EXERCICIO;
+        acertos += ((enr.lessons[l.id] || {}).correct) || 0;
+    });
+    return { acertos, totalQuestoes };
+}
+
+// RN-04: dia da liberação de cada aula, calculado em regras.js
 function lessonRelease(courseId, idx) {
     const enr = PROGRESS.enrollments[courseId];
-    return enr ? enr.enrolledDay + 1 + idx : Infinity; // Aula 1 no dia seguinte à inscrição
+    if (!enr) return Infinity;
+    const course = courseById(courseId);
+    const aulas = course.lessons.map(l => {
+        const lp = enr.lessons[l.id] || {};
+        return { concluidaDia: lp.done ? (lp.doneDay ?? enr.enrolledDay) : null };
+    });
+    return Regras.diaLiberacaoAula(idx, enr.enrolledDay, aulas);
 }
 
 function lessonState(course, idx) {
@@ -1019,17 +1047,14 @@ function lessonState(course, idx) {
     if (lp.done) return { key: 'done', score: lp.score };
 
     const release = lessonRelease(course.id, idx);
+    if (release === Infinity) return { key: 'locked', reason: 'Conclua a aula anterior' };
     if (PROGRESS.simDay < release) {
         const diff = release - PROGRESS.simDay;
         return { key: 'locked', reason: diff === 1 ? `Libera amanhã (${fmtDay(release)})` : `Libera em ${fmtDay(release)}` };
     }
-    if (idx > 0) {
-        const prev = course.lessons[idx - 1];
-        if (!(enr.lessons[prev.id] || {}).done) return { key: 'locked', reason: 'Conclua a aula anterior' };
-    }
     if (lesson.type === 'presencial') {
         const exam = PROGRESS.exams[course.id];
-        if (exam && exam.score != null) return exam.score >= 6 ? { key: 'done', score: exam.score } : { key: 'failed', reason: `Nota ${exam.score.toFixed(1)}: abaixo de 6,0` };
+        if (exam && exam.score != null) return Regras.aprovadoExclusivo(exam.score) ? { key: 'done', score: exam.score } : { key: 'failed', reason: `Nota ${exam.score.toFixed(1)}: abaixo de 6,0` };
         if (exam) return { key: 'scheduled', reason: `Prova agendada: ${exam.date}` };
         return { key: 'available', reason: 'Agende a prova presencial' };
     }
@@ -1052,42 +1077,72 @@ function nextLessonInfo(course) {
     return null;
 }
 
+/* Inscrição (RF-11, RF-12): o aluno lê os Termos de Participação e aceita. */
 function enrollCourse(courseId) {
     const course = courseById(courseId);
     if (!course) return;
-    if (isCompleted(courseId)) return showToast('Você já concluiu este curso. Não é possível se inscrever de novo, mas o conteúdo continua disponível para consulta.', 'warning');
     if (isEnrolled(courseId)) return openClassroom(courseId);
-    if (course.type === 'exclusivo') return requestSeat(courseId);
-
-    PROGRESS.enrollments[courseId] = { enrolledDay: PROGRESS.simDay, lessons: {} };
-    showToast(`Inscrição confirmada em "${course.title}". A Aula 1 será liberada amanhã (${fmtDay(PROGRESS.simDay + 1)}).`, 'success');
-    pushNotif('corretor', { icon: 'book-open-check', title: 'Inscrição confirmada', msg: `${course.title}: a Aula 1 abre em ${fmtDay(PROGRESS.simDay + 1)}.` });
-    refresh();
+    const check = Regras.podeInscrever({
+        tipo: course.type, aprovado: isCompleted(courseId),
+        inscritoAgora: isEnrolled(courseId), reprovadoNestaTurma: wasFailed(courseId),
+    });
+    if (!check.ok) {
+        const msg = {
+            'ja-aprovado': 'Você já foi aprovado neste curso. Não é possível se inscrever de novo, mas o conteúdo continua disponível para consulta.',
+            'reprovado-nesta-turma': 'Você foi reprovado nesta turma e perdeu o acesso. Aguarde uma nova turma.',
+        }[check.motivo] || 'Inscrição indisponível.';
+        return showToast(msg, 'warning');
+    }
+    if (course.type === 'exclusivo') {
+        if (course.regional !== STATE.regional) return showToast(`Turma exclusiva da CRECI-${course.regional}. Ela não está disponível para a sua Regional.`, 'error');
+        if (course.seatsTaken >= course.seats) return showToast('A turma está lotada. Aguarde a abertura de uma nova turma.', 'warning');
+    }
+    openTermsModal(courseId);
 }
 
-function requestSeat(courseId) {
+function openTermsModal(courseId) {
     const course = courseById(courseId);
-    if (!course) return;
-    if (course.regional !== STATE.regional) return showToast(`Turma exclusiva da CRECI-${course.regional}. Ela não está disponível para a sua Regional.`, 'error');
-    if (course.seatsTaken >= course.seats) return showToast('A turma está lotada. Aguarde a abertura de uma nova turma.', 'warning');
-    if (isPending(courseId) || isEnrolled(courseId)) return;
+    const excl = course.type === 'exclusivo';
+    const n = course.lessons.filter(l => l.type !== 'presencial').length;
+    const desc = excl
+        ? `O curso é composto por ${n} aulas on-line e uma prova final presencial. Cada aula contém um exercício que deve ser realizado para ter acesso à aula seguinte.`
+        : `O curso é composto por ${n} aulas. Cada aula contém um exercício que deve ser realizado para ter acesso à aula seguinte. A aula seguinte será disponibilizada após 24 horas da realização do exercício da aula anterior. O curso tem prazo de participação de <b>${courseDeadlineDays(course)} dias</b> contados a partir da data de inscrição.`;
+    const terms = excl
+        ? [`A PROVA FINAL será realizada na sede da CRECI-${esc(course.regional)}, em data e local a serem definidos pela Regional.`,
+           'Se reprovado, o aluno perde o acesso ao conteúdo do curso nesta turma.',
+           'Se aprovado, o certificado é disponibilizado após o lançamento da nota e o aluno continua com acesso ao conteúdo.']
+        : ['Quando o prazo do curso encerrar, o sistema analisará o aproveitamento do aluno e determinará sua aprovação ou reprovação (mínimo de 60%).',
+           'Se reprovado, o aluno perde o acesso ao conteúdo do curso e poderá realizar nova inscrição.',
+           'Se aprovado, o certificado é disponibilizado e o aluno continua tendo acesso ao conteúdo do curso.'];
+    openModal({
+        title: course.title,
+        icon: course.icon,
+        size: 'lg',
+        body: `
+        <div class="label-mono mb-1">Descrição do curso</div>
+        <p class="text-sm mb-4">${desc}</p>
+        <div class="label-mono mb-1">Termos de participação</div>
+        <p class="text-sm text-muted mb-2">Sua inscrição neste curso declara seu aceite aos seguintes termos.</p>
+        <ul class="text-sm space-y-1 mb-4" style="padding-left:1.1rem;list-style:disc">${terms.map(t => `<li>${t}</li>`).join('')}</ul>
+        <label class="flex items-start gap-2 text-sm font-semibold cursor-pointer">
+            <input type="checkbox" id="terms-check" style="margin-top:.2rem" onchange="$('#terms-confirm').disabled = !this.checked">
+            <span>Aceito os termos e quero me inscrever neste curso</span>
+        </label>`,
+        footer: `<button class="btn btn-ghost mr-auto" onclick="closeModal()">Voltar</button>
+                 <button class="btn btn-primary" id="terms-confirm" disabled onclick="confirmEnroll('${course.id}')"><i data-lucide="check"></i> Inscrever-se</button>`,
+    });
+}
 
-    PROGRESS.pending[courseId] = { requestedAt: todayStr() };
-    showToast(`Solicitação de vaga enviada para "${course.title}".`, 'info');
+function confirmEnroll(courseId) {
+    const course = courseById(courseId);
+    if (!course || !$('#terms-check')?.checked) return;
+    if (course.type === 'exclusivo') course.seatsTaken += 1;
+    PROGRESS.enrollments[courseId] = { enrolledDay: PROGRESS.simDay, lessons: {} };
+    closeModal();
+    const tail = course.type === 'padrao' ? ` Prazo de participação: até ${fmtDay(courseDeadlineDay(course, PROGRESS.enrollments[courseId]))}.` : '';
+    showToast(`Inscrição confirmada em "${course.title}". A Aula 1 será liberada amanhã (${fmtDay(PROGRESS.simDay + 1)}).${tail}`, 'success');
+    pushNotif('corretor', { icon: 'book-open-check', title: 'Inscrição confirmada', msg: `${course.title}: a Aula 1 abre em ${fmtDay(PROGRESS.simDay + 1)}.` });
     refresh();
-
-    // Simula a aprovação pela Regional
-    setTimeout(() => {
-        if (!PROGRESS.pending[courseId]) return;
-        delete PROGRESS.pending[courseId];
-        course.seatsTaken += 1;
-        PROGRESS.enrollments[courseId] = { enrolledDay: PROGRESS.simDay, lessons: {} };
-        pushNotif('corretor', { icon: 'circle-check', title: 'Vaga aprovada', msg: `${course.title} (${course.edition}).` });
-        if (STATE.loggedIn && STATE.profile === 'corretor') {
-            showToast(`Vaga aprovada pela CRECI-${course.regional}: ${course.title}.`, 'success');
-            refresh();
-        }
-    }, 2200);
 }
 
 function advanceDay() {
@@ -1097,6 +1152,9 @@ function advanceDay() {
         const course = courseById(id);
         course.lessons.forEach((l, idx) => { if (lessonRelease(id, idx) === PROGRESS.simDay) released.push(`${course.title}: ${l.title}`); });
     });
+    // RN-07: ao vencer o prazo, o sistema avalia o aproveitamento
+    Object.keys(PROGRESS.enrollments).forEach(checkCompletion);
+
     if (released.length) {
         showToast(`Novo dia (${todayStr()}). Aula liberada: ${released[0]}${released.length > 1 ? ` e mais ${released.length - 1}` : ''}.`, 'success');
         released.forEach(r => pushNotif('corretor', { icon: 'calendar-clock', title: 'Nova aula liberada', msg: r }));
@@ -1104,53 +1162,85 @@ function advanceDay() {
         showToast(`Novo dia simulado: ${todayStr()}.`, 'info');
     }
     refresh();
-    if (STATE.classroom) renderClassroom();
+    if (STATE.classroom && !isEnrolled(STATE.classroom.courseId) && !STATE.classroom.review) closeModal();
+    else if (STATE.classroom) renderClassroom();
 }
 
-function completeCourse(courseId) {
+function newCertCode(courseId) {
+    return `${String(1000 + (hashStr(courseId + Date.now()) % 9000))}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+}
+
+function completeCourse(courseId, pct = null) {
     const course = courseById(courseId);
     if (!course || isCompleted(courseId)) return;
+    const enrDone = PROGRESS.enrollments[courseId];
     delete PROGRESS.enrollments[courseId];
-    PROGRESS.completed[courseId] = { date: todayStr() };
-    const code = `${String(1000 + (hashStr(courseId + Date.now()) % 9000))}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    PROGRESS.completed[courseId] = { date: todayStr(), pct, from: enrDone ? fmtDay(enrDone.enrolledDay) : null };
+    const code = newCertCode(courseId);
     CERTS.unshift({ id: `cert-${courseId}-${Date.now()}`, courseId, courseTitle: course.title, date: todayStr(), code, hours: course.hours, regional: course.regional || STATE.regional || 'SP', owner: 'corretor' });
     pushNotif('corretor', { icon: 'award', title: 'Certificado disponível', msg: `${course.title}, ${course.hours}h. Código ${code}.` });
 
-    if (STATE.profile === 'corretor') showToast(`Parabéns! Você concluiu "${course.title}". O certificado já está em Meus Certificados.`, 'success');
-    else showToast(`${STUDENT_NAME()} concluiu "${course.title}" e já pode emitir o certificado.`, 'success');
+    if (STATE.profile === 'corretor') showToast(`Parabéns! Você foi aprovado em "${course.title}"${pct != null ? ` com ${pct}%` : ''}. O certificado já está em Meus Certificados.`, 'success');
+    else showToast(`${STUDENT_NAME()} foi aprovado em "${course.title}" e já pode emitir o certificado.`, 'success');
 }
 
-// Verifica se o curso cumpriu todas as condições de conclusão
+/* RN-13: reprovado perde o acesso, o resultado vai para o histórico e (Padrão) pode se inscrever de novo. */
+function failCourse(courseId, motivo, pct) {
+    const course = courseById(courseId);
+    const enr = PROGRESS.enrollments[courseId];
+    if (!course || !enr) return;
+    PROGRESS.history.unshift({ courseId, from: fmtDay(enr.enrolledDay), to: todayStr(), result: 'reprovado', pct, motivo });
+    delete PROGRESS.enrollments[courseId];
+    delete PROGRESS.exams[courseId];
+    const why = motivo === 'prazo-encerrado' ? 'o prazo do curso terminou' : motivo === 'prova-presencial' ? 'a nota da prova ficou abaixo de 6,0' : 'o aproveitamento ficou abaixo de 60%';
+    const next = course.type === 'padrao' ? 'Você pode se inscrever de novo.' : 'O acesso a esta turma foi encerrado.';
+    pushNotif('corretor', { icon: 'circle-x', title: 'Resultado do curso: reprovado', msg: `${course.title}: ${why}${pct != null ? ` (${pct}%)` : ''}. ${next}` });
+    if (STATE.profile === 'corretor') showToast(`Reprovado em "${course.title}": ${why}. ${next}`, 'error');
+}
+
+// Decide a situação do curso pelas regras de regras.js (RN-09 a RN-13)
 function checkCompletion(courseId) {
     const course = courseById(courseId);
     const enr = PROGRESS.enrollments[courseId];
     if (!course || !enr || isCompleted(courseId)) return;
 
+    if (course.type === 'padrao') {
+        const { acertos, totalQuestoes } = courseTotals(course, enr);
+        const r = Regras.avaliarPadrao({
+            acertos, totalQuestoes,
+            aulasConcluidas: course.lessons.filter(l => (enr.lessons[l.id] || {}).done).length,
+            totalAulas: course.lessons.length,
+            diaAtual: PROGRESS.simDay, inscricaoDia: enr.enrolledDay, prazoDias: courseDeadlineDays(course),
+        });
+        if (r.status === 'aprovado') completeCourse(courseId, r.pct);
+        else if (r.status === 'reprovado') failCourse(courseId, r.motivo, r.pct);
+        return;
+    }
+
+    // Exclusivo: o resultado é a prova presencial
     const onlineDone = course.lessons.every(l => l.type === 'presencial' || (enr.lessons[l.id] || {}).done);
     if (!onlineDone) return;
-
-    if (course.requiresExam) {
-        const exam = PROGRESS.exams[courseId];
-        if (!exam || exam.score == null || exam.score < 6) {
-            if (!PROGRESS.noticeShown[`exam-${courseId}`] && STATE.profile === 'corretor') {
-                PROGRESS.noticeShown[`exam-${courseId}`] = true;
-                showToast('Aulas online concluídas! Agora falta a prova presencial.', 'info');
-            }
-            return;
+    const exam = PROGRESS.exams[courseId];
+    if (!exam || exam.score == null) {
+        if (!PROGRESS.noticeShown[`exam-${courseId}`] && STATE.profile === 'corretor') {
+            PROGRESS.noticeShown[`exam-${courseId}`] = true;
+            showToast('Aulas online concluídas! Agora falta a prova presencial.', 'info');
         }
+        return;
     }
+    const r = Regras.avaliarExclusivo(exam.score);
+    if (r.status === 'reprovado') return failCourse(courseId, r.motivo, r.pct);
     if (course.requiresPtam) {
         const ptam = studentPtam(courseId);
         if (!ptam || ptam.status !== 'completed') return;
     }
-    completeCourse(courseId);
+    completeCourse(courseId, r.pct);
 }
 
 /* ───────────────────────── VIEW: MEUS CURSOS ───────────────────────── */
 function viewMeusCursos() {
     const user = currentUser();
     const enrolled = Object.keys(PROGRESS.enrollments).map(courseById).filter(Boolean);
-    const pending = Object.keys(PROGRESS.pending).map(courseById).filter(Boolean);
     const myCerts = CERTS.filter(c => c.owner === 'corretor');
     const hours = CERTS.filter(c => c.owner === 'corretor').reduce((s, c) => s + c.hours, 0);
     const availableToday = enrolled.reduce((n, c) => n + c.lessons.filter((l, i) => lessonState(c, i).key === 'available').length, 0);
@@ -1170,9 +1260,9 @@ function viewMeusCursos() {
     return `
     ${pageHeader({
         icon: 'book-open-check',
-        crumb: 'Aprendizagem / Meus Cursos',
-        title: 'Meus Cursos',
-        subtitle: `Olá, ${esc(firstName)}. Acompanhe os cursos em andamento e os que você já concluiu.`,
+        crumb: 'Aprendizagem / Apenas Meus Cursos',
+        title: 'Apenas Meus Cursos',
+        subtitle: `Olá, ${esc(firstName)}. Acompanhe os cursos em andamento e os finalizados com aprovação.`,
         actions: simDayControl(),
     })}
 
@@ -1194,23 +1284,14 @@ function viewMeusCursos() {
         </div>`).join('')}
     </div>` : ''}
 
-    <div class="section-title">Em andamento</div>
+    <div class="section-title">Cursos em andamento</div>
     <div class="panel">
-        ${enrolled.length || pending.length ? `
+        ${enrolled.length ? `
             ${enrolled.map(enrolledRow).join('')}
-            ${pending.map(c => `
-            <div class="course-row">
-                <div class="course-row-icon thumb-exclusivo"><i data-lucide="${c.icon}"></i></div>
-                <div class="flex-1 min-w-[200px]">
-                    <div class="flex flex-wrap gap-2 mb-1"><span class="badge badge-gold">Exclusivo</span><span class="badge badge-warning"><i data-lucide="hourglass"></i> Aguardando aprovação</span></div>
-                    <div class="font-bold">${esc(c.title)}</div>
-                    <div class="text-xs text-muted mt-1">${esc(c.edition)} · pedido feito em ${esc(PROGRESS.pending[c.id].requestedAt)}</div>
-                </div>
-            </div>`).join('')}
         ` : emptyState('book-open', 'Nenhum curso em andamento', 'Escolha um curso no catálogo para começar.', `<button class="btn btn-primary" onclick="switchView('catalogo')"><i data-lucide="library"></i> Ver todos os cursos</button>`)}
     </div>
 
-    <div class="section-title">Concluídos</div>
+    <div class="section-title">Cursos finalizados com aprovação</div>
     <div class="panel">
         ${myCerts.length ? `
         <div class="table-wrap">
@@ -1341,7 +1422,7 @@ function updateCatalogGrid() {
     const list = visibleCourses().filter(c =>
         (f.tipo === 'todos' || c.type === f.tipo) &&
         (f.categoria === 'todas' || c.category === f.categoria) &&
-        (f.situacao === 'todas' || !can('learn') || courseStatus(c.id) === f.situacao || (f.situacao === 'enrolled' && courseStatus(c.id) === 'pending')) &&
+        (f.situacao === 'todas' || !can('learn') || courseStatus(c.id) === f.situacao) &&
         (!q || normalize(`${c.title} ${c.description} ${c.category}`).includes(q)));
 
     const count = $('#catalog-count');
@@ -1364,17 +1445,15 @@ function courseCard(c) {
         action = `<button class="btn btn-ghost btn-sm" onclick="openClassroom('${c.id}', true)"><i data-lucide="eye"></i> Consultar</button>`;
     } else if (status === 'enrolled') {
         action = `<button class="btn btn-primary btn-sm" onclick="openClassroom('${c.id}')"><i data-lucide="play-circle"></i> Continuar</button>`;
-    } else if (status === 'pending') {
-        action = `<button class="btn btn-secondary btn-sm" disabled><i data-lucide="hourglass"></i> Aguardando</button>`;
     } else if (excl) {
         action = full
             ? `<button class="btn btn-secondary btn-sm" disabled>Turma lotada</button>`
-            : `<button class="btn btn-gold btn-sm" onclick="requestSeat('${c.id}')"><i data-lucide="ticket"></i> Solicitar vaga</button>`;
+            : `<button class="btn btn-gold btn-sm" onclick="enrollCourse('${c.id}')"><i data-lucide="plus"></i> Inscrever-se</button>`;
     } else {
         action = `<button class="btn btn-primary btn-sm" onclick="enrollCourse('${c.id}')"><i data-lucide="plus"></i> Inscrever-se</button>`;
     }
 
-    const statusBadge = { completed: '<span class="badge badge-success"><i data-lucide="check"></i> Concluído</span>', enrolled: '<span class="badge badge-primary">Em andamento</span>', pending: '<span class="badge badge-warning">Vaga solicitada</span>' }[status] || '';
+    const statusBadge = { completed: '<span class="badge badge-success"><i data-lucide="check"></i> Concluído</span>', enrolled: '<span class="badge badge-primary">Em andamento</span>' }[status] || '';
     const scopeLabel = excl ? `Turma CRECI-${c.regional}` : (c.scope === 'Nacional' ? 'Nacional' : `Regional · CRECI-${c.scope}`);
 
     return `
@@ -1439,7 +1518,7 @@ function renderClassroomList(course) {
         const meta = [
             lesson.type === 'presencial' ? 'Presencial' : 'Vídeo',
             lesson.duration,
-            lesson.quiz ? 'Exercício (mín. 60%)' : '',
+            lesson.quiz ? 'Exercício (conta para a nota final)' : '',
             st.score != null && lesson.type !== 'presencial' ? `Nota ${st.score}%` : '',
             st.score != null && lesson.type === 'presencial' ? `Nota ${st.score.toFixed(1)}` : '',
         ].filter(Boolean).join(' · ');
@@ -1473,7 +1552,7 @@ function renderClassroomList(course) {
             <div class="progress flex-1 ${excl ? 'gold' : ''}" style="min-width:160px"><span style="width:${prog.pct}%"></span></div>
             <span class="font-mono text-xs font-bold">${prog.done}/${prog.total} aulas</span>
         </div>
-        <div class="alert alert-info mb-4"><i data-lucide="calendar-days"></i><div class="flex-1">As aulas abrem uma por dia, a partir do dia seguinte à inscrição. Hoje (simulado): <b class="font-mono">${todayStr()}</b>.</div><button class="btn btn-secondary btn-sm" onclick="advanceDay()"><i data-lucide="calendar-plus"></i> +1 dia</button></div>`}
+        <div class="alert alert-info mb-4"><i data-lucide="calendar-days"></i><div class="flex-1">A Aula 1 abre no dia seguinte à inscrição. As demais abrem 24 horas depois de você fazer o exercício da anterior. Hoje (simulado): <b class="font-mono">${todayStr()}</b>.</div><button class="btn btn-secondary btn-sm" onclick="advanceDay()"><i data-lucide="calendar-plus"></i> +1 dia</button></div>`}
 
         <div class="label-mono mb-2">Aulas</div>
         <div class="space-y-2">${lessonsHTML}</div>
@@ -1575,12 +1654,12 @@ function quizSection(course, idx) {
             }).join('')}
         </fieldset>`).join('')}
         ${res ? `
-            <div class="alert ${res.passed ? 'alert-success' : 'alert-danger'}">
-                <i data-lucide="${res.passed ? 'circle-check' : 'circle-x'}"></i>
-                <div class="flex-1">${res.passed ? `Você acertou <b>${res.score}%</b>. Aula concluída!` : `Você acertou <b>${res.score}%</b>. O mínimo é 60%. Revise o conteúdo e tente de novo.`}</div>
+            <div class="alert alert-info">
+                <i data-lucide="clipboard-check"></i>
+                <div class="flex-1">Você acertou <b>${res.correct} de ${res.total}</b> (${res.score}%). Esse resultado entra na nota final do curso (mínimo de 60% no total). A próxima aula abre 24 horas depois.</div>
             </div>
             <div class="flex gap-2">
-                ${res.passed ? `<button type="button" class="btn btn-primary" onclick="backToLessons()"><i data-lucide="list"></i> Voltar às aulas</button>` : `<button type="button" class="btn btn-primary" onclick="retryQuiz()"><i data-lucide="rotate-ccw"></i> Tentar novamente</button>`}
+                <button type="button" class="btn btn-primary" onclick="backToLessons()"><i data-lucide="list"></i> Voltar às aulas</button>
             </div>` : `
             <button type="submit" class="btn btn-primary"><i data-lucide="send"></i> Enviar respostas</button>`}
     </form>`;
@@ -1612,29 +1691,23 @@ function submitQuiz(event) {
     const questions = quizFor(course.id, cr.lessonIdx);
     if (questions.some((_, qi) => cr.answers[qi] === undefined)) return showToast('Responda todas as perguntas antes de enviar.', 'warning');
 
+    const lp0 = (PROGRESS.enrollments[course.id]?.lessons || {})[lesson.id] || {};
+    if (lp0.done) return showToast('Este exercício já foi enviado e não pode ser refeito.', 'info');
     const correct = questions.filter((q, qi) => cr.answers[qi] === q.answer).length;
-    const score = Math.round(correct / questions.length * 100);
-    const passed = score >= 60;
-    cr.result = { score, passed };
+    const score = Regras.percentual(correct, questions.length);
+    cr.result = { score, correct, total: questions.length };
 
     const enr = PROGRESS.enrollments[course.id];
     if (enr) {
-        enr.lessons[lesson.id] = { ...(enr.lessons[lesson.id] || {}), score, done: passed || !!(enr.lessons[lesson.id] || {}).done };
+        enr.lessons[lesson.id] = { ...(enr.lessons[lesson.id] || {}), score, correct, total: questions.length, done: true, doneDay: PROGRESS.simDay };
     }
-    showToast(passed ? `Exercício aprovado: ${score}%.` : `Você fez ${score}%. O mínimo é 60%.`, passed ? 'success' : 'error');
-    if (passed) checkCompletion(course.id);
+    showToast(`Exercício enviado: ${correct} de ${questions.length} (${score}%).`, 'info');
+    checkCompletion(course.id);
 
-    if (isCompleted(course.id)) { closeModal(); refresh(); return; }
+    // Aprovado ou reprovado encerra a inscrição: fecha a sala de aula
+    if (!isEnrolled(course.id)) { closeModal(); refresh(); return; }
     renderClassroom();
     refresh();
-}
-
-function retryQuiz() {
-    const cr = STATE.classroom;
-    if (!cr) return;
-    cr.answers = {};
-    cr.result = null;
-    renderClassroom();
 }
 
 function completeLesson() {
@@ -1644,10 +1717,10 @@ function completeLesson() {
     const lesson = course.lessons[cr.lessonIdx];
     const enr = PROGRESS.enrollments[course.id];
     if (!enr) return;
-    enr.lessons[lesson.id] = { ...(enr.lessons[lesson.id] || {}), done: true, score: null };
+    enr.lessons[lesson.id] = { ...(enr.lessons[lesson.id] || {}), done: true, score: null, doneDay: PROGRESS.simDay };
     showToast(`Aula "${lesson.title}" concluída.`, 'success');
     checkCompletion(course.id);
-    if (isCompleted(course.id)) { closeModal(); refresh(); return; }
+    if (!isEnrolled(course.id)) { closeModal(); refresh(); return; }
     cr.lessonIdx = null;
     renderClassroom();
     refresh();
@@ -1663,7 +1736,7 @@ function examSection(course, st) {
     const cr = STATE.classroom;
     const exam = PROGRESS.exams[course.id];
     const header = `
-        <div class="alert alert-info mb-4"><i data-lucide="map-pin"></i><div>A prova presencial é feita na sede da Regional. A nota é lançada pela administração (importação de planilha) e precisa ser <b>6,0 ou mais</b>.</div></div>`;
+        <div class="alert alert-info mb-4"><i data-lucide="map-pin"></i><div>A prova presencial é agendada pela Regional. A nota é lançada pela administração (importação de planilha) e precisa ser <b>6,0 ou mais</b>. Abaixo disso, você perde o acesso a esta turma.</div></div>`;
 
     if (cr.review) return header;
     if (exam && exam.score != null) {
@@ -1851,6 +1924,13 @@ function openCertificateByCourse(courseId) {
     if (cert) openCertificate(cert.id); else showToast('Certificado não encontrado.', 'error');
 }
 
+function certTextFor(cert) {
+    const course = courseById(cert.courseId);
+    const done = PROGRESS.completed[cert.courseId];
+    return Regras.preencherCoringas(course?.certText || Regras.TEXTO_CERTIFICADO_PADRAO,
+        { nome_curso: cert.courseTitle, dt_inicio_curso: done?.from, dt_fim_curso: cert.date });
+}
+
 function openCertificate(certId) {
     const cert = CERTS.find(c => c.id === certId);
     if (!cert) return showToast('Certificado não encontrado.', 'error');
@@ -1870,8 +1950,7 @@ function openCertificate(certId) {
                 <div style="width:70px;height:2px;background:#b8953b;margin:.7rem auto 1.1rem"></div>
                 <p style="color:#475569;margin:0">Certificamos que</p>
                 <p style="font-family:'Source Serif 4',Georgia,serif;font-size:1.6rem;font-weight:600;margin:.3rem 0 .6rem">${esc(USERS.corretor.name)}</p>
-                <p style="color:#475569;margin:0">concluiu com aproveitamento o curso</p>
-                <p style="font-size:1.1rem;font-weight:700;color:#1d4ed8;margin:.35rem 0 .8rem">${esc(cert.courseTitle)}</p>
+                <p style="font-size:1rem;font-weight:600;color:#1d4ed8;margin:.35rem 0 .8rem">${esc(certTextFor(cert))}</p>
                 <p style="font-size:.82rem;color:#64748b;margin:0 0 1.4rem">Carga horária de ${cert.hours} horas · concluído em ${esc(cert.date)}</p>
                 <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;border-top:1px solid #e2e8f0;padding-top:1rem;text-align:left">
                     <div><div style="font:600 .55rem 'JetBrains Mono',monospace;letter-spacing:.14em;color:#94a3b8">CÓDIGO DE VALIDAÇÃO</div><div style="font:700 .9rem 'JetBrains Mono',monospace">${esc(cert.code)}</div></div>
@@ -2083,7 +2162,7 @@ function viewNotas() {
                             <td><div class="font-semibold">${esc(r.name)}</div><div class="text-[11px] text-muted font-mono">${esc(r.creci)}</div></td>
                             <td class="text-sm">${esc(r.turma)}</td>
                             <td class="font-mono font-bold">${r.score.toFixed(1)}</td>
-                            <td><span class="badge ${r.score >= 6 ? 'badge-success' : 'badge-danger'}">${r.score >= 6 ? 'Aprovado' : 'Reprovado'}</span></td>
+                            <td><span class="badge ${Regras.aprovadoExclusivo(r.score) ? 'badge-success' : 'badge-danger'}">${Regras.aprovadoExclusivo(r.score) ? 'Aprovado' : 'Reprovado'}</span></td>
                         </tr>`).join('')}
                     </tbody>
                 </table>
@@ -2161,14 +2240,318 @@ function confirmImport() {
         const course = courseById(r.courseId);
         const enr = PROGRESS.enrollments[r.courseId];
         const presencial = course.lessons.find(l => l.type === 'presencial');
-        if (enr && presencial && r.score >= 6) enr.lessons[presencial.id] = { done: true, score: r.score };
+        if (enr && presencial && Regras.aprovadoExclusivo(r.score)) enr.lessons[presencial.id] = { done: true, score: r.score, doneDay: PROGRESS.simDay };
         pushNotif('corretor', { icon: 'clipboard-check', title: 'Nota da prova lançada', msg: `${course.title}: ${r.score.toFixed(1)}.` });
         checkCompletion(r.courseId);
     });
-    STATE.importHistory.unshift({ file: prev.file, date: todayStr(), rows: prev.rows.length, approved: prev.rows.filter(r => r.score >= 6).length });
+    STATE.importHistory.unshift({ file: prev.file, date: todayStr(), rows: prev.rows.length, approved: prev.rows.filter(r => Regras.aprovadoExclusivo(r.score)).length });
     STATE.importPreview = null;
     showToast(`${prev.rows.length} notas importadas.`, 'success');
     refresh();
+}
+
+/* ───────────────────────── VIEW: RELATÓRIOS (D2 s24–s31) ─────────────────────────
+   Master vê todas as Regionais; o Admin Regional só vê a sua (RN-15).
+   Filtros do slide 27: Curso (1 ou mais), Período, Resultado e Regional (1 ou mais).
+   Os dados abaixo são fictícios; as linhas do corretor de demonstração vêm do estado vivo. */
+const REPORT_RESULT = {
+    aprovado:  { label: 'Aprovado',     badge: 'badge-success' },
+    reprovado: { label: 'Reprovado',    badge: 'badge-danger' },
+    andamento: { label: 'Em andamento', badge: 'badge-primary' },
+    habilitado:{ label: 'Habilitado para prova', badge: 'badge-gold' },
+};
+
+const REPORT_SEED = [
+    { courseId: 'c2',  name: 'Beatriz Nogueira', regional: 'SP', from: '2026-08-03', to: '2026-09-02', result: 'aprovado' },
+    { courseId: 'c2',  name: 'Carlos Menezes',   regional: 'RJ', from: '2026-08-10', to: '2026-09-09', result: 'reprovado' },
+    { courseId: 'c9',  name: 'Daniela Torres',   regional: 'MG', from: '2026-09-01', to: '',           result: 'andamento' },
+    { courseId: 'c9',  name: 'Eduardo Salles',   regional: 'SP', from: '2026-08-20', to: '2026-09-18', result: 'aprovado' },
+    { courseId: 'c10', name: 'Fabiana Rocha',    regional: 'PR', from: '2026-09-15', to: '2026-10-12', result: 'aprovado' },
+    { courseId: 'c10', name: 'Gustavo Pires',    regional: 'SP', from: '2026-10-01', to: '',           result: 'andamento' },
+    { courseId: 'x1',  name: 'Helena Barbosa',   regional: 'SP', from: '2026-07-06', to: '2026-09-20', result: 'aprovado' },
+    { courseId: 'x1',  name: 'Igor Fontana',     regional: 'SP', from: '2026-07-06', to: '2026-09-20', result: 'reprovado' },
+    { courseId: 'x1',  name: 'Júlia Andrade',    regional: 'SP', from: '2026-07-08', to: '',           result: 'habilitado' },
+    { courseId: 'x3',  name: 'Karina Lopes',     regional: 'RJ', from: '2026-07-13', to: '',           result: 'andamento' },
+    { courseId: 'x4',  name: 'Leandro Veiga',    regional: 'MG', from: '2026-07-20', to: '',           result: 'habilitado' },
+    { courseId: 'x5',  name: 'Mariana Teixeira', regional: 'PR', from: '2026-08-03', to: '2026-10-05', result: 'aprovado' },
+];
+
+function brToIso(br) { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(br || ''); return m ? `${m[3]}-${m[2]}-${m[1]}` : ''; }
+function isoToBr(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? `${m[3]}/${m[2]}/${m[1]}` : '—'; }
+
+// Junta os dados fictícios com o que o corretor de demonstração fez de verdade na sessão
+function reportRows() {
+    const live = [];
+    const me = STUDENT_NAME();
+    const regionalOf = id => courseById(id)?.regional || 'SP';
+    Object.entries(PROGRESS.enrollments).forEach(([id, enr]) => {
+        const c = courseById(id); if (!c) return;
+        const exclusivoPronto = c.type === 'exclusivo' && c.lessons.every(l => l.type === 'presencial' || (enr.lessons[l.id] || {}).done);
+        live.push({ courseId: id, name: me, regional: regionalOf(id), from: brToIso(fmtDay(enr.enrolledDay)), to: '', result: exclusivoPronto ? 'habilitado' : 'andamento' });
+    });
+    Object.entries(PROGRESS.completed).forEach(([id, done]) => {
+        if (!courseById(id)) return;
+        live.push({ courseId: id, name: me, regional: regionalOf(id), from: brToIso(done.from || done.date), to: brToIso(done.date), result: 'aprovado' });
+    });
+    PROGRESS.history.forEach(h => live.push({ courseId: h.courseId, name: me, regional: regionalOf(h.courseId), from: brToIso(h.from), to: brToIso(h.to), result: h.result }));
+    const rows = [...live, ...REPORT_SEED];
+    return can('all_regions') ? rows : rows.filter(r => r.regional === STATE.regional);
+}
+
+function reportFiltered() {
+    const f = STATE.report;
+    const q = normalize(f.q.trim());
+    return reportRows().filter(r =>
+        (!f.courses.length || f.courses.includes(r.courseId)) &&
+        (!f.results.length || f.results.includes(r.result)) &&
+        (!can('all_regions') || !f.regionals.length || f.regionals.includes(r.regional)) &&
+        (!f.from || r.from >= f.from) && (!f.to || r.from <= f.to) &&
+        (!q || normalize(r.name).includes(q)));
+}
+
+function checkGroup(name, items, selected) {
+    return `<div class="check-group" role="group" aria-label="${esc(name)}">${items.map(([value, label]) => `
+        <label class="check-chip"><input type="checkbox" value="${esc(value)}" ${selected.includes(value) ? 'checked' : ''} onchange="toggleReportFilter('${name}', '${esc(value)}', this.checked)"> <span>${esc(label)}</span></label>`).join('')}</div>`;
+}
+
+function viewRelatorios() {
+    const f = STATE.report;
+    const master = can('all_regions');
+    const courseOptions = (master ? COURSES : visibleCourses()).map(c => [c.id, `${c.title}${c.type === 'exclusivo' ? ` · ${c.edition}` : ''}`]);
+    const regionalOptions = [...new Set(reportRows().map(r => r.regional))].sort().map(r => [r, `CRECI-${r}`]);
+    return `
+    ${pageHeader({
+        icon: 'bar-chart-3',
+        crumb: 'Gestão / Relatórios',
+        title: 'Relatórios',
+        subtitle: master ? 'Participação de todos os alunos, em todas as Regionais.' : `Participação dos alunos da CRECI-${esc(STATE.regional)}. Você vê apenas a sua Regional.`,
+        actions: `<button class="btn btn-secondary" onclick="exportReportCsv()"><i data-lucide="download"></i> Exportar CSV</button>`,
+    })}
+
+    <div id="report-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+
+    <div class="panel mt-5">
+        <div class="filter-bar border-b border-line" style="align-items:flex-start">
+            <div style="flex:2 1 260px">
+                <label class="field-label" for="rep-q">Busca por aluno</label>
+                <div class="input-icon"><i data-lucide="search"></i><input id="rep-q" class="input" type="search" placeholder="Nome do aluno" value="${esc(f.q)}" oninput="setReportText('q', this.value)"></div>
+            </div>
+            <div>
+                <label class="field-label" for="rep-from">Inscrição de</label>
+                <input id="rep-from" class="input" type="date" value="${esc(f.from)}" onchange="setReportText('from', this.value)">
+            </div>
+            <div>
+                <label class="field-label" for="rep-to">até</label>
+                <input id="rep-to" class="input" type="date" value="${esc(f.to)}" onchange="setReportText('to', this.value)">
+            </div>
+        </div>
+        <details class="report-filters" open>
+            <summary>Filtros por curso, resultado${master ? ' e Regional' : ''} <span class="text-muted text-xs">(vazio = todos)</span></summary>
+            <div class="px-4 pb-4 space-y-3">
+                <div><div class="label-mono mb-1">Resultado</div>${checkGroup('results', Object.entries(REPORT_RESULT).map(([k, v]) => [k, v.label]), f.results)}</div>
+                ${master ? `<div><div class="label-mono mb-1">Regional</div>${checkGroup('regionals', regionalOptions, f.regionals)}</div>` : ''}
+                <div><div class="label-mono mb-1">Curso</div>${checkGroup('courses', courseOptions, f.courses)}</div>
+                <button class="btn btn-ghost btn-sm" onclick="clearReportFilters()"><i data-lucide="x"></i> Limpar filtros</button>
+            </div>
+        </details>
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Curso</th><th>Inscrito</th><th class="hidden sm:table-cell">Regional</th><th class="hidden md:table-cell">Data inscrição</th><th class="hidden md:table-cell">Data término</th><th>Resultado</th></tr></thead>
+                <tbody id="report-tbody"></tbody>
+            </table>
+        </div>
+    </div>`;
+}
+
+function setReportText(key, value) { STATE.report[key] = value; updateReportTable(); }
+function toggleReportFilter(group, value, on) {
+    const list = STATE.report[group];
+    const i = list.indexOf(value);
+    if (on && i < 0) list.push(value);
+    if (!on && i >= 0) list.splice(i, 1);
+    updateReportTable();
+}
+function clearReportFilters() { STATE.report = { q: '', from: '', to: '', courses: [], results: [], regionals: [] }; renderView(); }
+
+function updateReportTable() {
+    const tbody = $('#report-tbody');
+    if (!tbody) return;
+    const rows = reportFiltered();
+    const count = k => rows.filter(r => r.result === k).length;
+    $('#report-kpis').innerHTML = [
+        kpi({ label: 'Inscrições', value: rows.length, icon: 'users', tone: 'primary', hint: 'Com os filtros atuais' }),
+        kpi({ label: 'Aprovados', value: count('aprovado'), icon: 'circle-check', tone: 'success' }),
+        kpi({ label: 'Reprovados', value: count('reprovado'), icon: 'circle-x', tone: 'danger' }),
+        kpi({ label: 'Em curso', value: count('andamento') + count('habilitado'), icon: 'hourglass', tone: 'warning', hint: 'Em andamento ou habilitados para a prova' }),
+    ].join('');
+    tbody.innerHTML = rows.length ? rows.map(r => {
+        const c = courseById(r.courseId);
+        const st = REPORT_RESULT[r.result];
+        return `
+        <tr>
+            <td><div class="font-semibold">${esc(c ? c.title : '—')}</div><div class="text-[11px] text-muted">${esc(c ? c.edition : '')}</div></td>
+            <td class="font-semibold">${esc(r.name)}</td>
+            <td class="hidden sm:table-cell font-mono text-xs">CRECI-${esc(r.regional)}</td>
+            <td class="hidden md:table-cell font-mono text-xs">${isoToBr(r.from)}</td>
+            <td class="hidden md:table-cell font-mono text-xs">${isoToBr(r.to)}</td>
+            <td><span class="badge ${st.badge}">${st.label}</span></td>
+        </tr>`;
+    }).join('') : `<tr><td colspan="6">${emptyState('search-x', 'Nenhum resultado', 'Ajuste os filtros para ver mais inscrições.')}</td></tr>`;
+    icons();
+}
+
+function csvCell(v) { return `"${String(v ?? '').replace(/"/g, '""')}"`; }
+function exportReportCsv() {
+    const rows = reportFiltered();
+    const lines = [['Curso', 'Edição', 'Inscrito', 'Regional', 'Data inscrição', 'Data término', 'Resultado'].map(csvCell).join(';')]
+        .concat(rows.map(r => { const c = courseById(r.courseId); return [c?.title, c?.edition, r.name, `CRECI-${r.regional}`, isoToBr(r.from), isoToBr(r.to), REPORT_RESULT[r.result].label].map(csvCell).join(';'); }));
+    try {
+        const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'relatorio-ead-creci.csv';
+        document.body.appendChild(a); a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+        showToast(`${rows.length} linhas exportadas.`, 'success');
+    } catch (e) { showToast('Não foi possível exportar neste navegador.', 'error'); }
+}
+
+/* ───────────────────────── VIEW: CRIAR CURSO (D2 s15–s18) ─────────────────────────
+   Três abas, como no slide: Estrutura · Inscrição e Participação · Certificado.
+   O curso criado entra no catálogo da sessão (em memória). */
+const COURSE_DRAFT_EMPTY = () => ({
+    tab: 'estrutura', title: '', type: 'padrao', category: 'Mercado', hours: 10,
+    lessons: [{ title: '', quiz: true }],
+    scope: 'Nacional', regional: 'SP', deadlineDays: 30, seats: 30,
+    enrollFrom: '', enrollTo: '', classFrom: '', classTo: '',
+    certText: Regras.TEXTO_CERTIFICADO_PADRAO,
+});
+
+function draftField(key, value) { STATE.courseDraft[key] = value; if (key === 'certText') updateCertPreview(); }
+function draftLesson(i, key, value) { STATE.courseDraft.lessons[i][key] = value; }
+function draftAddLesson() { STATE.courseDraft.lessons.push({ title: '', quiz: true }); renderView(); }
+function draftRemoveLesson(i) { if (STATE.courseDraft.lessons.length > 1) { STATE.courseDraft.lessons.splice(i, 1); renderView(); } }
+function draftTab(tab) { STATE.courseDraft.tab = tab; renderView(); }
+function draftType(type) { STATE.courseDraft.type = type; STATE.courseDraft.scope = type === 'exclusivo' ? 'Regional' : 'Nacional'; renderView(); }
+function draftInsertToken(token) {
+    const ta = $('#cd-cert');
+    if (!ta) return;
+    const start = ta.selectionStart ?? ta.value.length;
+    ta.value = ta.value.slice(0, start) + token + ta.value.slice(ta.selectionEnd ?? start);
+    draftField('certText', ta.value);
+    ta.focus(); ta.selectionStart = ta.selectionEnd = start + token.length;
+}
+function updateCertPreview() {
+    const el = $('#cd-cert-preview');
+    if (el) el.textContent = Regras.preencherCoringas(STATE.courseDraft.certText, { nome_curso: STATE.courseDraft.title || 'Nome do curso', dt_inicio_curso: '01/03/2027', dt_fim_curso: '31/03/2027' });
+}
+
+function viewCriarCurso() {
+    const d = STATE.courseDraft;
+    const excl = d.type === 'exclusivo';
+    const tabs = [['estrutura', 'Estrutura'], ['inscricao', 'Inscrição e Participação'], ['certificado', 'Certificado']];
+    const regionalSelect = (id, value, onchange) => `<select id="${id}" class="select" onchange="${onchange}">${REGIONAIS.map(r => `<option value="${r.sigla}" ${value === r.sigla ? 'selected' : ''}>CRECI-${r.sigla} · ${r.estado}</option>`).join('')}</select>`;
+    let panel = '';
+    if (d.tab === 'estrutura') {
+        panel = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2"><label class="field-label" for="cd-title">Nome do curso <em>*</em></label>
+                <input id="cd-title" class="input" value="${esc(d.title)}" placeholder="Ex.: Inteligência Artificial para Corretores" oninput="draftField('title', this.value)"><p class="field-error" id="cd-title-error" hidden></p></div>
+            <div><label class="field-label" for="cd-type">Tipo de curso</label>
+                <select id="cd-type" class="select" onchange="draftType(this.value)"><option value="padrao" ${!excl ? 'selected' : ''}>Padrão: disponível indefinidamente</option><option value="exclusivo" ${excl ? 'selected' : ''}>Exclusivo: turmas com datas e prova presencial</option></select></div>
+            <div><label class="field-label" for="cd-hours">Carga horária (h)</label>
+                <input id="cd-hours" class="input" type="number" min="1" value="${esc(d.hours)}" oninput="draftField('hours', Number(this.value))"></div>
+        </div>
+        <div class="label-mono mt-4 mb-2">Aulas <em class="text-danger">*</em></div>
+        <div class="space-y-2">
+            ${d.lessons.map((l, i) => `
+            <div class="flex items-center gap-2">
+                <span class="lesson-num">${i + 1}</span>
+                <input class="input flex-1" aria-label="Título da aula ${i + 1}" value="${esc(l.title)}" placeholder="Título da aula" oninput="draftLesson(${i}, 'title', this.value)">
+                <label class="check-chip" title="Exercício de múltipla escolha ao final da aula"><input type="checkbox" ${l.quiz ? 'checked' : ''} onchange="draftLesson(${i}, 'quiz', this.checked)"> <span>Exercício</span></label>
+                <button class="icon-btn" aria-label="Remover aula ${i + 1}" onclick="draftRemoveLesson(${i})" ${d.lessons.length === 1 ? 'disabled' : ''}><i data-lucide="trash-2"></i></button>
+            </div>`).join('')}
+        </div>
+        <p class="field-error" id="cd-lessons-error" hidden></p>
+        <button class="btn btn-secondary btn-sm mt-3" onclick="draftAddLesson()"><i data-lucide="plus"></i> Adicionar aula</button>
+        ${excl ? `<div class="alert alert-info mt-4"><i data-lucide="map-pin"></i><div>Curso Exclusivo inclui uma <b>prova final presencial</b>, agendada pela Regional. Ela será criada como última etapa.</div></div>` : ''}`;
+    } else if (d.tab === 'inscricao') {
+        panel = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${excl ? `
+            <div><label class="field-label" for="cd-regional">Regional da turma</label>${regionalSelect('cd-regional', d.regional, "draftField('regional', this.value)")}</div>
+            <div><label class="field-label" for="cd-seats">Vagas da turma</label><input id="cd-seats" class="input" type="number" min="1" value="${esc(d.seats)}" oninput="draftField('seats', Number(this.value))"></div>
+            <div><label class="field-label" for="cd-ef">Inscrições de <em>*</em></label><input id="cd-ef" class="input" type="date" value="${esc(d.enrollFrom)}" onchange="draftField('enrollFrom', this.value)"></div>
+            <div><label class="field-label" for="cd-et">Inscrições até <em>*</em></label><input id="cd-et" class="input" type="date" value="${esc(d.enrollTo)}" onchange="draftField('enrollTo', this.value)"></div>
+            <div><label class="field-label" for="cd-cf">Início da turma <em>*</em></label><input id="cd-cf" class="input" type="date" value="${esc(d.classFrom)}" onchange="draftField('classFrom', this.value)"></div>
+            <div><label class="field-label" for="cd-ct">Fim da turma <em>*</em></label><input id="cd-ct" class="input" type="date" value="${esc(d.classTo)}" onchange="draftField('classTo', this.value)"></div>` : `
+            <div><label class="field-label" for="cd-scope">Abrangência</label>
+                <select id="cd-scope" class="select" onchange="draftField('scope', this.value === 'Regional' ? 'SP' : 'Nacional'); renderView()"><option value="Nacional" ${d.scope === 'Nacional' ? 'selected' : ''}>Todo o Brasil</option><option value="Regional" ${d.scope !== 'Nacional' ? 'selected' : ''}>Apenas uma Regional</option></select></div>
+            ${d.scope !== 'Nacional' ? `<div><label class="field-label" for="cd-regional">Regional</label>${regionalSelect('cd-regional', d.scope, "draftField('scope', this.value)")}</div>` : '<div></div>'}
+            <div><label class="field-label" for="cd-deadline">Prazo de participação (dias) <em>*</em></label><input id="cd-deadline" class="input" type="number" min="1" value="${esc(d.deadlineDays)}" oninput="draftField('deadlineDays', Number(this.value))"><p class="field-hint">Contado a partir da inscrição.</p><p class="field-error" id="cd-deadline-error" hidden></p></div>
+            <div><label class="field-label">Período de inscrição</label><p class="text-sm pt-2">A qualquer tempo</p></div>`}
+        </div>
+        <div class="label-mono mt-5 mb-2">Regras fixas da plataforma</div>
+        <ul class="text-sm text-muted space-y-1" style="padding-left:1.1rem;list-style:disc">
+            <li>Aula 1 no dia seguinte à inscrição; demais 24 horas após o exercício da anterior.</li>
+            <li>Prazo de 48 horas para cada atividade.</li>
+            <li>Aprovação com pelo menos 60% no resultado final.</li>
+            <li>${excl ? 'Resultado final = nota da prova presencial.' : 'Resultado final = acertos em todos os exercícios ÷ total de questões.'}</li>
+        </ul>
+        <p class="field-error" id="cd-dates-error" hidden></p>`;
+    } else {
+        panel = `
+        <label class="field-label" for="cd-cert">Texto do certificado</label>
+        <textarea id="cd-cert" class="textarea" rows="4" oninput="draftField('certText', this.value)">${esc(d.certText)}</textarea>
+        <p class="field-hint">Use os coringas para deixar o texto dinâmico:</p>
+        <div class="flex flex-wrap gap-2 my-2">${['[nome_curso]', '[dt_inicio_curso]', '[dt_fim_curso]'].map(t => `<button type="button" class="btn btn-secondary btn-sm font-mono" onclick="draftInsertToken('${t}')">${t}</button>`).join('')}</div>
+        <ul class="text-xs text-muted" style="padding-left:1.1rem;list-style:disc"><li><b>[nome_curso]</b>: nome completo do curso</li><li><b>[dt_inicio_curso]</b>: data de início do curso</li><li><b>[dt_fim_curso]</b>: data de término do curso</li></ul>
+        <div class="label-mono mt-4 mb-1">Pré-visualização</div>
+        <p id="cd-cert-preview" class="panel panel-body text-sm" style="box-shadow:none"></p>`;
+    }
+
+    return `
+    ${pageHeader({ icon: 'plus-circle', crumb: 'Gestão / Criar Curso', title: 'Criar Curso', subtitle: 'Cadastre a estrutura, as regras de participação e o texto do certificado.' })}
+    <div class="panel">
+        <div class="tabs" role="tablist" aria-label="Etapas da criação do curso">
+            ${tabs.map(([k, label]) => `<button role="tab" class="tab ${d.tab === k ? 'active' : ''}" aria-selected="${d.tab === k}" onclick="draftTab('${k}')">${label}</button>`).join('')}
+        </div>
+        <div class="panel-body" role="tabpanel">${panel}</div>
+        <div class="flex justify-end gap-2 p-4 border-t border-line">
+            <button class="btn btn-ghost" onclick="STATE.courseDraft = COURSE_DRAFT_EMPTY(); renderView()">Limpar</button>
+            <button class="btn btn-primary" onclick="saveCourse()"><i data-lucide="check"></i> Criar curso</button>
+        </div>
+    </div>`;
+}
+
+function saveCourse() {
+    const d = STATE.courseDraft;
+    const errors = Regras.validarCurso({
+        titulo: d.title, tipo: d.type, aulas: d.lessons.map(l => l.title), prazoDias: d.deadlineDays,
+        inscricaoDe: d.enrollFrom, inscricaoAte: d.enrollTo, turmaDe: d.classFrom, turmaAte: d.classTo, vagas: d.seats,
+    });
+    if (errors.length) {
+        // abre a aba que contém o primeiro erro
+        draftTab(errors[0].aba);
+        STATE.courseDraft.tab = errors[0].aba;
+        showToast(errors[0].mensagem, 'error');
+        return;
+    }
+    const excl = d.type === 'exclusivo';
+    const lessons = d.lessons.map((l, i) => L(`l${i + 1}`, l.title.trim(), '30min', l.quiz));
+    if (excl) lessons.push(L(`l${lessons.length + 1}`, 'Prova presencial', '2h', false, 'presencial'));
+    const edition = excl ? `Turma ${d.regional} ${d.classFrom.slice(0, 4)}` : `Edição ${1 + COURSES.length}`;
+    const course = {
+        id: `n${Date.now()}`, title: d.title.trim(), type: d.type, category: d.category, icon: excl ? 'graduation-cap' : 'book-open',
+        hours: d.hours || 1, modality: excl ? 'EAD + Presencial' : 'Online', edition,
+        description: 'Curso criado no protótipo.', lessons, certText: d.certText,
+        ...(excl ? { regional: d.regional, seats: d.seats, seatsTaken: 0, requiresExam: true, requiresPtam: false, classFrom: d.classFrom, classTo: d.classTo }
+                 : { scope: d.scope, deadlineDays: d.deadlineDays }),
+    };
+    COURSES.push(course);
+    STATE.courseDraft = COURSE_DRAFT_EMPTY();
+    showToast(`Curso "${course.title}" criado e já aparece em Todos os Cursos.`, 'success');
+    switchView('catalogo');
 }
 
 /* ───────────────────────── PERFIL ───────────────────────── */
@@ -2381,6 +2764,16 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab' && $('#modal').classList.contains('active')) {
+        const box = $('#modal-box');
+        const focusables = $$('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', box)
+            .filter(el => el.offsetParent !== null);
+        if (focusables.length) {
+            const first = focusables[0], last = focusables[focusables.length - 1];
+            if (!box.contains(document.activeElement) || (e.shiftKey && document.activeElement === first)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+    }
     if (e.key === 'Escape') {
         if ($('.dropdown.open')) closeDropdowns();
         else if ($('#modal').classList.contains('active')) closeModal();
@@ -2402,6 +2795,7 @@ document.addEventListener('DOMContentLoaded', () => {
     applyTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light', false);
     applyFontScale(Number(storageGet('ead-font')) || 100, false);
 
+    STATE.courseDraft = COURSE_DRAFT_EMPTY();
     renderLoginOptions();
     showLoginStep(1);
     Scene.init();

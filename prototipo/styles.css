@@ -959,3 +959,30 @@ html:not(.dark) .login {
     #modal .modal-header, #modal .modal-footer, #modal .accent-line, .no-print { display: none !important; }
     #modal .modal-body { padding: 0; overflow: visible; }
 }
+
+/* ── RELATÓRIOS E CRIAR CURSO ── */
+.check-group { display: flex; flex-wrap: wrap; gap: .4rem; }
+.check-chip {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .4rem .7rem; border: 1px solid rgb(var(--c-line)); border-radius: 999px;
+    background: rgb(var(--c-surface)); font-size: .78rem; font-weight: 600; cursor: pointer;
+}
+.check-chip:has(input:checked) { border-color: rgb(var(--c-primary)); background: rgb(var(--c-primary) / .08); color: rgb(var(--c-primary)); }
+.check-chip input { accent-color: rgb(var(--c-primary)); }
+.report-filters > summary { padding: .75rem 1.15rem; font-weight: 700; font-size: .85rem; cursor: pointer; border-bottom: 1px solid rgb(var(--c-line)); }
+.tabs { display: flex; gap: .25rem; padding: .5rem .75rem 0; border-bottom: 1px solid rgb(var(--c-line)); overflow-x: auto; }
+.tab {
+    padding: .65rem 1rem; border: 0; background: transparent; cursor: pointer; white-space: nowrap;
+    font: inherit; font-size: .85rem; font-weight: 600; color: rgb(var(--c-muted));
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tab.active { color: rgb(var(--c-primary)); border-bottom-color: rgb(var(--c-primary)); }
+
+/* ── CELULAR / TOQUE: alvos de toque de pelo menos 44 px e texto legível ── */
+@media (pointer: coarse) {
+    .btn, .btn-sm, .check-chip, .tab, .nav-link, .dropdown-item { min-height: 44px; }
+    .icon-btn { width: 44px; height: 44px; }
+    .bottom-nav-item { min-height: 52px; }
+    .input, .select { min-height: 44px; font-size: 16px; } /* 16 px evita o zoom automático do iOS ao focar */
+}
+.label-mono, .table th { font-size: max(.68rem, 11px); }

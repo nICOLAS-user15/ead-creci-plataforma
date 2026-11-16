@@ -99,7 +99,7 @@
                 <p class="login-lead">Cursos, aulas diárias e certificados para corretores de imóveis de todo o Brasil, direto do celular.</p>
                 <div class="login-gold-rule"><i></i></div>
                 <ul class="login-features">
-                    <li><span class="ico"><i data-lucide="calendar-days"></i></span><span><b>Uma aula por dia</b><small>A primeira abre no dia seguinte à inscrição</small></span></li>
+                    <li><span class="ico"><i data-lucide="calendar-days"></i></span><span><b>Uma aula de cada vez</b><small>A 1ª abre no dia seguinte; as demais, 24 h após cada exercício</small></span></li>
                     <li><span class="ico"><i data-lucide="file-check-2"></i></span><span><b>Turmas da sua Regional</b><small>Prova presencial e envio do PTAM em PDF</small></span></li>
                     <li><span class="ico"><i data-lucide="award"></i></span><span><b>Certificados num só lugar</b><small>Emissão e validação por código</small></span></li>
                 </ul>
@@ -218,8 +218,8 @@
                 <div class="nav-section" data-perm="learn">
                     <button class="nav-section-title" onclick="toggleNavSection(this)" aria-expanded="true">Aprendizagem <i data-lucide="chevron-down"></i></button>
                     <div class="nav-items">
-                        <button class="nav-link" data-view="meus-cursos" onclick="switchView('meus-cursos')"><i data-lucide="book-open-check"></i> Meus Cursos</button>
                         <button class="nav-link" data-view="catalogo" onclick="switchView('catalogo')"><i data-lucide="library"></i> Todos os Cursos</button>
+                        <button class="nav-link" data-view="meus-cursos" onclick="switchView('meus-cursos')"><i data-lucide="book-open-check"></i> Apenas Meus Cursos</button>
                         <button class="nav-link" data-view="certificados" onclick="switchView('certificados')"><i data-lucide="award"></i> Meus Certificados</button>
                     </div>
                 </div>
@@ -228,7 +228,9 @@
                     <button class="nav-section-title" onclick="toggleNavSection(this)" aria-expanded="true">Gestão <i data-lucide="chevron-down"></i></button>
                     <div class="nav-items">
                         <button class="nav-link" data-view="admin" onclick="switchView('admin')"><i data-lucide="inbox"></i> Pareceres PTAM <span class="nav-count" id="nav-count-ptam" hidden></span></button>
+                        <button class="nav-link" data-view="relatorios" data-perm="reports" onclick="switchView('relatorios')"><i data-lucide="bar-chart-3"></i> Relatórios</button>
                         <button class="nav-link" data-view="notas" data-perm="import_grades" onclick="switchView('notas')"><i data-lucide="file-spreadsheet"></i> Notas presenciais</button>
+                        <button class="nav-link" data-view="criar-curso" data-perm="create_course" onclick="switchView('criar-curso')"><i data-lucide="plus-circle"></i> Criar curso</button>
                         <button class="nav-link" data-view="catalogo" onclick="switchView('catalogo')"><i data-lucide="library"></i> Catálogo de cursos</button>
                         <button class="nav-link" data-view="certificados" onclick="switchView('certificados')"><i data-lucide="badge-check"></i> Validar certificado</button>
                     </div>
@@ -327,9 +329,10 @@
 
     <!-- Bottom nav (mobile) -->
     <nav id="bottom-nav" class="bottom-nav" aria-label="Navegação inferior" hidden>
-        <button class="bottom-nav-item" data-view="meus-cursos" data-perm="learn" onclick="switchView('meus-cursos')"><i data-lucide="book-open-check"></i>Meus Cursos</button>
         <button class="bottom-nav-item" data-view="admin" data-perm="ptam_queue" onclick="switchView('admin')"><i data-lucide="inbox"></i>PTAM</button>
+        <button class="bottom-nav-item" data-view="relatorios" data-perm="reports" onclick="switchView('relatorios')"><i data-lucide="bar-chart-3"></i>Relatórios</button>
         <button class="bottom-nav-item" data-view="catalogo" onclick="switchView('catalogo')"><i data-lucide="library"></i>Cursos</button>
+        <button class="bottom-nav-item" data-view="meus-cursos" data-perm="learn" onclick="switchView('meus-cursos')"><i data-lucide="book-open-check"></i>Meus</button>
         <button class="bottom-nav-item" data-view="certificados" onclick="switchView('certificados')"><i data-lucide="award"></i>Certificados</button>
         <button class="bottom-nav-item" onclick="openProfile()"><i data-lucide="user-round"></i>Perfil</button>
     </nav>
@@ -350,6 +353,7 @@
 
     <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
 
+    <script src="regras.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
