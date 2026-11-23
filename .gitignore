@@ -27,3 +27,6 @@ node_modules/
 
 # Prints de referência de design (uso local, não versionar)
 prints PTAM e CRECI INTEGRA/
+
+# PPTX de requisitos (material interno do CRECI, uso local)
+*.pptx

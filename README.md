@@ -2,6 +2,8 @@
 
 Planejamento e protótipo interativo da nova Plataforma EAD do CRECI, em substituição ao ambiente atual baseado em Moodle.
 
+**▶ [Abrir o protótipo](https://nicolas-user15.github.io/ead-creci-plataforma/prototipo/)** · [Apresentação](https://nicolas-user15.github.io/ead-creci-plataforma/apresentacao/)
+
 > **Isto é um protótipo front-end.** Simula navegação, responsividade e regras de negócio com dados fictícios. Não há back-end nem banco de dados.
 
 ## Modalidades de Cursos
