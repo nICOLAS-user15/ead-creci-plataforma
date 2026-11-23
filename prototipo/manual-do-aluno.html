@@ -142,7 +142,7 @@
             <div class="spacer"></div>
             <button class="btn" onclick="toggleTheme()" aria-label="Alternar tema claro/escuro">◐ <span class="hide-xs">Tema</span></button>
             <button class="btn hide-sm" onclick="window.print()">Imprimir</button>
-            <a class="btn" href="index.html" aria-label="Ir para a plataforma">← <span class="hide-xs">Plataforma</span></a>
+            <a class="btn" href="index.html" onclick="return voltarPlataforma()" aria-label="Voltar para a plataforma">← <span class="hide-xs">Plataforma</span></a>
         </div>
     </header>
 
@@ -335,6 +335,16 @@
             var top = document.getElementById('to-top');
             window.addEventListener('scroll', function () { top.classList.toggle('show', window.scrollY > 600); }, { passive: true });
         })();
+
+        // O manual abre em aba nova a partir da plataforma. Recarregar index.html aqui recomeçaria
+        // o protótipo do login (o estado fica só na memória). Então, se esta aba foi aberta só para
+        // o manual, fecha e devolve o usuário à aba da plataforma, onde ele estava.
+        function voltarPlataforma() {
+            if (history.length > 1) return true;          // chegou navegando: segue o link normal
+            window.close();
+            setTimeout(function () { location.href = 'index.html'; }, 150); // navegador não deixou fechar
+            return false;
+        }
 
         function toggleTheme() {
             var dark = !document.documentElement.classList.contains('dark');
