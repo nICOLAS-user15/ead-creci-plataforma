@@ -26,7 +26,7 @@
         await loginAs('corretor');
         check('home do corretor é Todos os Cursos', STATE.view === 'catalogo', STATE.view);
         const navs = $$('.nav-section[data-perm="learn"] .nav-link').map(b => b.textContent.trim());
-        check('abas na ordem do PPTX', navs.join('|') === 'Todos os Cursos|Apenas Meus Cursos|Meus Certificados', navs.join('|'));
+        check('abas na ordem do PPTX', navs.join('|') === 'Todos os Cursos|Meus Cursos|Meus Certificados', navs.join('|'));
 
         // RN-04
         check('aula 2 do c1 liberada (aula 1 feita no dia 8)', lessonState(courseById('c1'), 1).key === 'available');

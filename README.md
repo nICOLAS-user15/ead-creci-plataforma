@@ -19,7 +19,7 @@ Todo o acesso é **exclusivo a corretores de imóveis**. Aprovação: no mínimo
 ## Navegação do aluno (3 abas)
 
 1. **Todos os Cursos**: catálogo
-2. **Apenas Meus Cursos**: em andamento e finalizados com aprovação
+2. **Meus Cursos**: em andamento e finalizados com aprovação
 3. **Meus Certificados**
 
 ## Perfis de acesso
@@ -44,7 +44,7 @@ Acompanhe o andamento em [STATUS.md](STATUS.md). A apresentação executiva est�
 
 ## Protótipo
 
-Abra `prototipo/index.html` no navegador. Tecnologias: HTML5, Tailwind CSS (CDN) e JavaScript ES6+.
+Abra `prototipo/index.html` no navegador. Tecnologias: HTML5, Tailwind CSS e JavaScript ES6+. Tailwind, ícones (Lucide) e fontes ficam em `prototipo/vendor/`, então o protótipo funciona sem internet.
 
 As regras de negócio (60 %, liberação de aulas, prazo, reprovação) ficam em `prototipo/regras.js`, sem ligação com a tela.
 

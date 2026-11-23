@@ -1260,8 +1260,8 @@ function viewMeusCursos() {
     return `
     ${pageHeader({
         icon: 'book-open-check',
-        crumb: 'Aprendizagem / Apenas Meus Cursos',
-        title: 'Apenas Meus Cursos',
+        crumb: 'Aprendizagem / Meus Cursos',
+        title: 'Meus Cursos',
         subtitle: `Olá, ${esc(firstName)}. Acompanhe os cursos em andamento e os finalizados com aprovação.`,
         actions: simDayControl(),
     })}
@@ -2754,7 +2754,7 @@ function showToast(message, type = 'info') {
     setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);
-    }, type === 'error' ? 5200 : 4200);
+    }, type === 'error' ? 4000 : 2800);
 }
 
 /* ───────────────────────── EVENTOS GLOBAIS ───────────────────────── */

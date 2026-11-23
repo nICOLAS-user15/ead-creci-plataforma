@@ -15,7 +15,7 @@ _Atualizado em 16/11/2026 (após auditoria do protótipo)_
 - [x] Auditoria e correção do protótipo contra a matriz: regras em regras.js, Relatórios, Criar Curso (ver docs/auditoria-e-melhorias.md)
 - [x] Testes: 11 de regras + 32 de navegador, todos passando
 - [ ] Reunião de alinhamento com o gestor
-- [ ] Apresentação executiva: rascunho em `apresentacao/`, a ensaiar
+- [ ] Apresentação: reescrita em 23/11/2026 como documento sobre o protótipo e o método com IA (`apresentacao/`); faltam as capturas de tela em `apresentacao/img/`
 
 ## Situação Atual
 

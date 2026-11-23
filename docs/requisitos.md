@@ -24,7 +24,7 @@
 | RF-04 | Tela de Tutorial explicando a navegação da plataforma | D1 s3; D2 s1–s2 | Média | Confirmado | L-10 |
 | RF-05 | Acesso exclusivo a corretores de imóveis, com controle de acesso por Regional do CRECI | D1 s2 | Alta | Confirmado | L-08, L-14 |
 | RF-06 | Cabeçalho logado com nome completo do usuário e botão "sair" em todas as telas | D2 s4–s31 | Alta | Confirmado | — |
-| RF-07 | Navegação do aluno em 3 abas: **Todos os Cursos**, **Apenas Meus Cursos**, **Meus Certificados** | D2 s4, s8, s14 | Alta | Confirmado | — |
+| RF-07 | Navegação do aluno em 3 abas: **Todos os Cursos**, **Meus Cursos**, **Meus Certificados** | D2 s4, s8, s14 | Alta | Confirmado | — |
 | RF-08 | Aba Todos os Cursos: catálogo em grade com os cursos disponíveis | D2 s4 | Alta | Confirmado | — |
 | RF-09 | Aba Meus Cursos separada em "Cursos em andamento" e "Cursos finalizados com aprovação" | D2 s8 | Alta | Confirmado | — |
 | RF-10 | Aba Meus Certificados: lista dos certificados do aluno | D1 s6; D2 s4 | Alta | Ambíguo | L-07 (tela é imagem) |

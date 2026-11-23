@@ -52,5 +52,5 @@
 - **Perfil Revisor:** aguarda resposta (L-02).
 - **Login só com e-mail (sem escolher Regional/perfil):** o protótipo mantém a escolha de Regional e perfil para demonstração. O comportamento real depende de L-08 e L-22.
 - **Back-end real, banco, e-mail, hospedagem de vídeo:** fora do escopo do protótipo (etapa 6 do plano).
-- **Tailwind via CDN:** adequado para protótipo; em produção deve ser compilado (a própria ferramenta avisa).
+- **Tailwind em arquivo local (`vendor/`):** funciona offline, adequado para protótipo; em produção deve ser compilado (a própria ferramenta avisa).
 - **Divisão do `app.js` em módulos:** só as regras foram separadas. O restante continua um arquivo grande; dividir agora aumentaria o risco sem ganho para a avaliação.
