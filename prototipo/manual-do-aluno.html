@@ -92,7 +92,8 @@
 
         /* Tablet */
         @media (max-width: 860px) {
-            .layout { grid-template-columns: 1fr; gap: 1rem; padding-top: 1.1rem; }
+            /* minmax(0, …): sem isso a coluna cresce até a largura mínima das tabelas e a página inteira passa da tela */
+            .layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding-top: 1.1rem; }
             nav.toc { position: sticky; top: 62px; z-index: 5; padding: .7rem .9rem; box-shadow: 0 6px 18px rgb(0 0 0 / .06); }
             nav.toc summary { cursor: pointer; }
             .toc-caret { display: inline; }
@@ -113,7 +114,17 @@
             section.card h2 { font-size: 1.08rem; }
             ol.steps li { padding: .6rem .7rem; }
             .note { flex-direction: column; gap: .3rem; }
+            /* Tabelas viram cartões empilhados: cada célula ganha o nome da coluna (data-label, preenchido pelo script) */
+            .tbl { overflow: visible; }
+            .tbl table { min-width: 0; }
+            .tbl thead { display: none; }
+            .tbl table, .tbl tbody, .tbl tr, .tbl td { display: block; width: 100%; }
+            .tbl tr { border: 1px solid var(--line); border-radius: 8px; background: var(--surface2); padding: .55rem .75rem; margin-bottom: .55rem; }
+            .tbl td { border: 0; padding: .2rem 0; }
+            .tbl td[data-label]:not(:first-child)::before { content: attr(data-label); display: block; font: 600 .6rem 'JetBrains Mono'; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-top: .25rem; }
         }
+        main { min-width: 0; }
+        code { overflow-wrap: anywhere; }
         @media (max-width: 380px) { .hide-xs { display: none; } }
         @media print {
             header.top, nav.toc { display: none; }
@@ -182,8 +193,8 @@
                 <div class="tbl"><table>
                     <thead><tr><th>Área</th><th>Para que serve</th></tr></thead>
                     <tbody>
+                        <tr><td><strong>Todos os Cursos</strong></td><td>Catálogo completo, com busca e filtros por modalidade, categoria e situação. É a tela que abre ao entrar.</td></tr>
                         <tr><td><strong>Meus Cursos</strong></td><td>Cursos em andamento, próxima aula, avisos importantes e cursos já concluídos.</td></tr>
-                        <tr><td><strong>Todos os Cursos</strong></td><td>Catálogo completo, com busca e filtros por modalidade, categoria e situação.</td></tr>
                         <tr><td><strong>Meus Certificados</strong></td><td>Emissão em PDF e validação de certificados por código.</td></tr>
                     </tbody>
                 </table></div>
@@ -314,6 +325,13 @@
             if (small.addEventListener) small.addEventListener('change', sync);
             d.querySelector('summary').addEventListener('click', function (e) { if (!small.matches) e.preventDefault(); });
             d.addEventListener('click', function (e) { if (e.target.closest('a') && small.matches) d.removeAttribute('open'); });
+            // Rótulo de coluna em cada célula, usado quando a tabela vira cartão no celular
+            Array.prototype.forEach.call(document.querySelectorAll('.tbl table'), function (t) {
+                var heads = Array.prototype.map.call(t.querySelectorAll('thead th'), function (th) { return th.textContent.trim(); });
+                Array.prototype.forEach.call(t.querySelectorAll('tbody tr'), function (tr) {
+                    Array.prototype.forEach.call(tr.children, function (td, i) { if (heads[i]) td.setAttribute('data-label', heads[i]); });
+                });
+            });
             var top = document.getElementById('to-top');
             window.addEventListener('scroll', function () { top.classList.toggle('show', window.scrollY > 600); }, { passive: true });
         })();
