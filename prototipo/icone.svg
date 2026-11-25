@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="EAD CRECI">
+  <defs>
+    <linearGradient id="fundo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d4ed8"/>
+      <stop offset="1" stop-color="#0c2848"/>
+    </linearGradient>
+    <clipPath id="canto"><rect width="64" height="64" rx="14"/></clipPath>
+  </defs>
+  <g clip-path="url(#canto)">
+    <rect width="64" height="64" fill="url(#fundo)"/>
+    <!-- base do capelo (duas faces em perspectiva) -->
+    <path d="M17 27 L32 35 V50 L17 42 Z" fill="#3b82f6"/>
+    <path d="M32 35 L47 27 V42 L32 50 Z" fill="#93c5fd"/>
+    <!-- espessura e topo da placa dourada -->
+    <path d="M8 20 L32 32 L56 20 V23.5 L32 35.5 L8 23.5 Z" fill="#a8842f"/>
+    <path d="M32 8 L56 20 L32 32 L8 20 Z" fill="#d4b46a"/>
+    <!-- borla -->
+    <path d="M32 20 L50 25 V36" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="50" cy="39" r="3.2" fill="#fff"/>
+  </g>
+</svg>

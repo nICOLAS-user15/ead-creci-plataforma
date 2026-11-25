@@ -1943,7 +1943,7 @@ function openCertificate(certId) {
         <div class="cert-sheet">
             <div class="cert-border">
                 <div style="display:flex;justify-content:center;align-items:center;gap:.6rem;margin-bottom:1.1rem">
-                    <div class="brand-mark"><i data-lucide="graduation-cap"></i></div>
+                    <div class="brand-mark"><img src="icone.svg" alt=""></div>
                     <div style="text-align:left"><div style="font-weight:800">EAD CRECI</div><div style="font:600 .55rem 'JetBrains Mono',monospace;letter-spacing:.16em;color:#64748b">SISTEMA COFECI · CRECI</div></div>
                 </div>
                 <div style="font:600 .66rem 'JetBrains Mono',monospace;letter-spacing:.2em;color:#9a7b2c">CERTIFICADO DE CONCLUSÃO</div>
