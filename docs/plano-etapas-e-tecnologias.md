@@ -29,10 +29,12 @@ Entregas pequenas e visíveis, porque o projeto tem prioridade secundária. Cada
 | Tecnologia | Papel | Justificativa |
 |------------|-------|---------------|
 | HTML5 | Estrutura | Abre em qualquer navegador, sem instalação |
-| Tailwind CSS 3.4 (CDN) | Estilo e responsividade | Mobile-first por padrão; ajuste rápido de layout para os 70 % de acesso por celular |
+| Tailwind CSS 3.4.16 (local, em `vendor/`) | Estilo e responsividade | Mobile-first por padrão; ajuste rápido de layout para os 70 % de acesso por celular |
 | JavaScript ES6+ (sem framework) | Simula navegação e regras com dados fictícios | Zero build, fácil de demonstrar e de inspecionar |
-| Lucide (ícones) | Iconografia | Leve e consistente |
-| Google Fonts (Inter) | Tipografia | Legibilidade em tela pequena |
+| Lucide 0.469 (ícones, local) | Iconografia | Leve e consistente |
+| Fontes locais: Inter, JetBrains Mono e Source Serif 4 | Tipografia | Inter para leitura em tela pequena; JetBrains Mono para rótulos e códigos; Source Serif 4 para títulos de destaque |
+
+Todas as dependências ficam em `prototipo/vendor/`, então o protótipo **funciona sem internet** (útil para demonstrar em rede restrita).
 
 **Limites assumidos:** sem back-end, sem banco, sem e-mail real. O link de acesso, o timer de 20 min e as regras de 48 h/60 % são **simulados** no navegador. Os dados são fictícios (L-20).
 
