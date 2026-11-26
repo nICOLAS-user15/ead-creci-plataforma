@@ -1,6 +1,6 @@
 # Painel Executivo — Status do Projeto
 
-_Atualizado em 16/11/2026 (após auditoria do protótipo)_
+_Atualizado em 26/11/2026_
 
 ## Marcos
 
@@ -13,7 +13,11 @@ _Atualizado em 16/11/2026 (após auditoria do protótipo)_
 - [x] Comparativo Moodle × sob medida (estrutura e contagem pronta; custos a levantar)
 - [x] Definição de tecnologias e etapas
 - [x] Auditoria e correção do protótipo contra a matriz: regras em regras.js, Relatórios, Criar Curso (ver docs/auditoria-e-melhorias.md)
-- [x] Testes: 11 de regras + 32 de navegador, todos passando
+- [x] Testes: 11 de regras + 32 de navegador, todos passando (última execução registrada em 16/11/2026)
+- [x] Protótipo publicado no GitHub Pages e funcionando sem internet (dependências em `prototipo/vendor/`), 23/11/2026
+- [x] Ajustes de 23/11/2026: aba renomeada para Meus Cursos, toasts mais curtos, manual do aluno corrigido no celular
+- [x] Identidade visual: ícone próprio (`prototipo/icone.svg`) como favicon e marca, 25/11/2026
+- [x] Plano de etapas e tecnologias revisado (dependências locais e fontes), 26/11/2026
 - [ ] Reunião de alinhamento com o gestor
 - [ ] Apresentação: reescrita em 23/11/2026 como documento sobre o protótipo e o método com IA (`apresentacao/`); faltam as capturas de tela em `apresentacao/img/`
 
