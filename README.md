@@ -1,5 +1,9 @@
 # Plataforma EAD CRECI
 
+[![Testes](https://github.com/nICOLAS-user15/ead-creci-plataforma/actions/workflows/testes.yml/badge.svg)](https://github.com/nICOLAS-user15/ead-creci-plataforma/actions/workflows/testes.yml)
+
+**Versão atual:** v2.0 em desenvolvimento · última versão fechada: [v1.0](https://github.com/nICOLAS-user15/ead-creci-plataforma/tree/v1.0) · [histórico de versões](CHANGELOG.md)
+
 Planejamento e protótipo interativo da nova Plataforma EAD do CRECI, em substituição ao ambiente atual baseado em Moodle.
 
 **▶ [Abrir o protótipo](https://nicolas-user15.github.io/ead-creci-plataforma/prototipo/)** · [Apresentação](https://nicolas-user15.github.io/ead-creci-plataforma/apresentacao/)
@@ -48,21 +52,53 @@ Acompanhe o andamento em [STATUS.md](STATUS.md). A apresentação executiva est�
 
 Abra `prototipo/index.html` no navegador. Tecnologias: HTML5, Tailwind CSS e JavaScript ES6+. Tailwind, ícones (Lucide) e fontes ficam em `prototipo/vendor/`, então o protótipo funciona sem internet.
 
-As regras de negócio (60 %, liberação de aulas, prazo, reprovação) ficam em `prototipo/regras.js`, sem ligação com a tela.
+As regras de negócio (60 %, liberação de aulas, prazo, reprovação) ficam em `prototipo/js/regras.js`, sem ligação com a tela. O restante do código fica dividido por assunto em `prototipo/js/` (ver estrutura abaixo).
+
+### Testes
 
 ```
 node --test prototipo/tests/regras.test.js   # 11 testes das regras
-node prototipo/tests/rodar-smoke.js          # 32 verificações no navegador (Edge/Chrome)
+node prototipo/tests/rodar-smoke.js          # 32 verificações no navegador (Chrome/Edge)
 ```
+
+Os dois rodam sozinhos no GitHub a cada push (aba **Actions**). O selo no topo desta página mostra o resultado do último push.
 
 ## Estrutura de Diretórios
 
 ```
 EAD-CRECI/
-├── README.md
-├── STATUS.md
-├── docs/
-├── prototipo/
-├── apresentacao/
-└── prints PTAM e CRECI INTEGRA/   (referências visuais)
+├── README.md                  capa do projeto
+├── STATUS.md                  painel de andamento
+├── CHANGELOG.md               histórico de versões
+├── .github/workflows/         testes automáticos no GitHub
+├── docs/                      requisitos, perguntas, plano, comparativo, log de prompts
+├── apresentacao/              documento de apresentação
+└── prototipo/
+    ├── index.html             estrutura da página (menu, barra superior, janela modal)
+    ├── manual-do-aluno.html
+    ├── styles.css
+    ├── icone.svg
+    ├── vendor/                Tailwind, ícones e fontes (cópias locais)
+    ├── tests/                 testes das regras e de navegador
+    └── js/                    carregados nesta ordem pelo index.html
+        ├── regras.js          regras de negócio (sem tela; roda também no Node)
+        ├── utilitarios.js     funções de apoio e datas simuladas
+        ├── dados.js           dados fictícios
+        ├── estado.js          estado da interface, tema e fonte
+        ├── componentes.js     peças reaproveitadas: cabeçalho, modal, avisos
+        ├── login-cenario.js   fundo animado do login
+        ├── login.js           fluxo de login
+        ├── layout.js          menu, barra superior, notificações, troca de telas
+        ├── cursos.js          inscrição, progresso, aprovação e reprovação
+        ├── telas/             uma tela por arquivo
+        └── inicio.js          eventos globais e inicialização (sempre por último)
 ```
+
+As imagens de referência visual (`prints PTAM e CRECI INTEGRA/`) e os PPTX ficam só no computador local, fora do GitHub.
+
+## Como trabalhamos
+
+- **Ramo único `main`**, revisado pelo responsável antes de cada push.
+- **Mensagens de commit** com prefixo: `feat:` (novidade), `fix:` (correção), `docs:` (documentação), `chore:` (limpeza), `test:` (testes), `refactor:` (reorganização sem mudar o comportamento).
+- **Versões** marcadas com tags (`v1.0`, `v2.0`) e descritas no [CHANGELOG.md](CHANGELOG.md).
+- **Publicação**: cada push no `main` atualiza o GitHub Pages em poucos minutos.

@@ -22,7 +22,7 @@
 | Exclusivo reprovado | Aluno ficava preso, "procure a Regional" | Perde acesso à turma, entra no histórico | D1 s2 |
 | Nota de prova | `>= 6` espalhado em 4 lugares | Uma função, `aprovadoExclusivo` | Uma regra, um lugar |
 
-**Estrutura nova:** [prototipo/regras.js](../prototipo/regras.js) concentra as decisões em funções puras, sem DOM. É o trecho que irá para o servidor na etapa 6, e já roda no Node. Por isso é testável: [prototipo/tests/regras.test.js](../prototipo/tests/regras.test.js).
+**Estrutura nova:** [prototipo/js/regras.js](../prototipo/js/regras.js) concentra as decisões em funções puras, sem DOM. É o trecho que irá para o servidor na etapa 6, e já roda no Node. Por isso é testável: [prototipo/tests/regras.test.js](../prototipo/tests/regras.test.js).
 
 ## 2. Telas novas e ajustadas
 
@@ -53,4 +53,4 @@
 - **Login só com e-mail (sem escolher Regional/perfil):** o protótipo mantém a escolha de Regional e perfil para demonstração. O comportamento real depende de L-08 e L-22.
 - **Back-end real, banco, e-mail, hospedagem de vídeo:** fora do escopo do protótipo (etapa 6 do plano).
 - **Tailwind em arquivo local (`vendor/`):** funciona offline, adequado para protótipo; em produção deve ser compilado (a própria ferramenta avisa).
-- **Divisão do `app.js` em módulos:** só as regras foram separadas. O restante continua um arquivo grande; dividir agora aumentaria o risco sem ganho para a avaliação.
+- ~~**Divisão do `app.js` em módulos:**~~ feito na v2.0 (26/11/2026): o código está em `prototipo/js/`, um arquivo por assunto.
