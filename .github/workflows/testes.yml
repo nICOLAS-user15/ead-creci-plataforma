@@ -1,0 +1,27 @@
+# Roda os testes do protótipo a cada push e a cada pull request.
+# Resultado: aba "Actions" do repositório (✓ verde = passou, ✗ vermelho = falhou).
+name: Testes
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:   # permite rodar manualmente pela aba Actions
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Testes das regras de negócio
+        run: node --test prototipo/tests/regras.test.js
+
+      - name: Teste de navegador (fluxos completos)
+        run: node prototipo/tests/rodar-smoke.js
