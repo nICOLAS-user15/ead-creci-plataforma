@@ -61,7 +61,7 @@ Estas escolhas são **recomendação de arquitetura**, não decisão. O PPTX nã
 | Risco | Efeito | Mitigação |
 |-------|--------|-----------|
 | Regras contraditórias nos PPTX (L-01, L-04, L-05) | Retrabalho no código | Responder P1 antes da etapa 6 |
-| Protótipo ganhar funções não pedidas | Parece produto pronto; confunde a avaliação | Marcar extras como "proposta" (P-08) |
+| Protótipo ganhar funções não pedidas | Parece produto pronto; confunde a avaliação | Registrar a origem de cada item em requisitos.md ("Proposto" = sem origem nos PPTX); decisão em P-08 |
 | Sem equipe de manutenção | Sob medida vira dívida | Decidir dono do sistema antes de construir |
 | Dados reais nos slides | LGPD | Só dados fictícios (L-20) |
 | Entrega de e-mail do link cair em SPAM | Aluno não consegue entrar | Monitorar entrega; fluxo alternativo (L-08) |

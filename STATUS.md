@@ -24,7 +24,7 @@ _Atualizado em 26/11/2026_
 
 - [x] Ícone próprio (`prototipo/icone.svg`) como favicon e marca, 25/11/2026
 - [x] Plano de etapas e tecnologias revisado, 26/11/2026
-- [x] Etiquetas "Proposta" nas funções fora dos requisitos originais, 26/11/2026
+- [x] Decisão: funções além dos requisitos originais (perfil, notificações, ajuda, validação de certificado) ficam no protótipo sem etiqueta, 26/11/2026
 - [x] Código do protótipo dividido por assunto em `prototipo/js/`, 26/11/2026
 - [x] Testes automáticos no GitHub a cada push, 26/11/2026
 - [x] Marcação de versões (tag `v1.0`) e histórico em CHANGELOG.md, 26/11/2026

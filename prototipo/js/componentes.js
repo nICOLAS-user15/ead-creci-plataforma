@@ -4,9 +4,6 @@
  */
 'use strict';
 
-// Etiqueta para funções que não constam nos requisitos originais (PPTX). Ver docs/prompts.md, P-08.
-const TAG_PROPOSTA = '<span class="tag-proposta" title="Não consta nos requisitos originais; a validar com o gestor">Proposta</span>';
-
 function pageHeader({ icon, crumb, title, subtitle, actions = '' }) {
     return `
     <div class="page-header">
@@ -44,7 +41,7 @@ function simDayControl() {
 
 let lastFocus = null;
 
-function openModal({ title, icon = 'info', body = '', footer = '', size = '', proposta = false }) {
+function openModal({ title, icon = 'info', body = '', footer = '', size = '' }) {
     const overlay = $('#modal');
     const box = $('#modal-box');
     const wasOpen = overlay.classList.contains('active');
@@ -52,7 +49,6 @@ function openModal({ title, icon = 'info', body = '', footer = '', size = '', pr
     const keepScroll = wasOpen ? bodyEl.scrollTop : 0;
 
     $('#modal-title').textContent = title;
-    if (proposta) $('#modal-title').insertAdjacentHTML('beforeend', ` ${TAG_PROPOSTA}`);
     $('#modal-icon').innerHTML = `<i data-lucide="${icon}"></i>`;
     bodyEl.innerHTML = body;
     $('#modal-footer').innerHTML = footer;

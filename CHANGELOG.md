@@ -8,7 +8,7 @@ Segunda versão, construída a partir do retorno da primeira reunião com o gest
 
 ### Protótipo
 - Ícone próprio da plataforma (`prototipo/icone.svg`), usado como favicon e marca.
-- Etiqueta **"Proposta"** nas funções que não constam nos requisitos originais: Meu Perfil, Notificações, Ajuda e Validar certificado.
+- Meu Perfil, Notificações, Ajuda e Validar certificado assumidos como funcionalidades do protótipo, mesmo não constando nos requisitos originais.
 
 ### Organização do código
 - `app.js` (2.800 linhas) dividido em 18 arquivos por assunto, em `prototipo/js/`. O código não mudou, só foi reorganizado.

@@ -17,7 +17,6 @@ function openProfile() {
     openModal({
         title: 'Meu perfil',
         icon: 'user-round-cog',
-        proposta: true,
         body: `
         <div class="flex flex-wrap items-center gap-4 mb-1">
             <div id="pf-avatar">${avatarHTML(user, 'xl')}</div>

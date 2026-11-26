@@ -10,7 +10,7 @@ function viewCertificados() {
     ${pageHeader({
         icon: 'award',
         crumb: isStudent ? 'Aprendizagem / Certificados' : 'Gestão / Certificados',
-        title: isStudent ? 'Meus Certificados' : `Validar certificado ${TAG_PROPOSTA}`,
+        title: isStudent ? 'Meus Certificados' : 'Validar certificado',
         subtitle: isStudent ? 'Emita e valide seus certificados nesta tela.' : 'Confira se um certificado emitido pela plataforma é verdadeiro.',
     })}
     <div class="grid grid-cols-1 ${isStudent ? 'lg:grid-cols-3' : ''} gap-4">
@@ -44,7 +44,7 @@ function viewCertificados() {
         <div class="panel ${isStudent ? '' : 'max-w-xl'}">
             <div class="panel-head">
                 <span class="panel-head-icon"><i data-lucide="shield-check"></i></span>
-                <div><div class="panel-title">Validar autenticidade ${TAG_PROPOSTA}</div><div class="panel-sub">Digite o código impresso no certificado</div></div>
+                <div><div class="panel-title">Validar autenticidade</div><div class="panel-sub">Digite o código impresso no certificado</div></div>
             </div>
             <form class="panel-body" onsubmit="validateCertificate(event)">
                 <label class="field-label" for="val-code">Código de validação</label>

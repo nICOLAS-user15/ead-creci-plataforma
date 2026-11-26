@@ -264,16 +264,6 @@ svg.lucide { flex-shrink: 0; }
 .badge-danger  { background: rgb(var(--c-danger) / .12);  color: rgb(var(--c-danger));  border-color: rgb(var(--c-danger) / .25); }
 .badge-neutral { background: rgb(var(--c-surface2)); color: rgb(var(--c-muted)); border-color: rgb(var(--c-line)); }
 
-/* Etiqueta "Proposta": marca funções que não constam nos requisitos originais (PPTX) */
-.tag-proposta {
-    display: inline-flex; align-items: center; vertical-align: middle;
-    font-size: .58rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; line-height: 1;
-    padding: .2rem .4rem; border-radius: 4px; white-space: nowrap; cursor: help;
-    color: rgb(var(--c-warning)); background: rgb(var(--c-warning) / .1); border: 1px dashed rgb(var(--c-warning) / .55);
-}
-.nav-link .tag-proposta { margin-left: auto; }
-h1 .tag-proposta, h2 .tag-proposta, .panel-title .tag-proposta { margin-left: .5rem; font-size: .6rem; }
-
 /* Tabelas */
 .table-wrap { overflow-x: auto; }
 .table { width: 100%; border-collapse: collapse; font-size: .82rem; }
