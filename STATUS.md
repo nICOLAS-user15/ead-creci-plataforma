@@ -25,11 +25,11 @@ _Atualizado em 26/11/2026_
 
 - **Fase:** 3 (Prototipação) concluindo; entrando na 4 (Validação)
 - **Bloqueios:** respostas às perguntas P1 (L-01 a L-05, L-08, L-21) dependem do gestor
-- **Riscos:** protótipo contém extras não pedidos nos PPTX (perfil editável, notificações, ajuda); perfil Revisor ausente; 7 perguntas P1 abertas
+- **Riscos:** protótipo contém extras não pedidos nos PPTX (perfil editável, notificações, ajuda, validação de certificado), agora marcados com a etiqueta "Proposta"; perfil Revisor ausente; 7 perguntas P1 abertas
 
 ## Próximos passos
 
-1. Marcar no protótipo o que é "proposta" e o que é requisito confirmado
+1. ~~Marcar no protótipo o que é "proposta" e o que é requisito confirmado~~ (feito em 26/11/2026: etiquetas "Proposta")
 2. Levar a agenda de perguntas ao gestor
 3. Obter dados do Moodle atual para fechar o custo
 

@@ -232,15 +232,15 @@
                         <button class="nav-link" data-view="notas" data-perm="import_grades" onclick="switchView('notas')"><i data-lucide="file-spreadsheet"></i> Notas presenciais</button>
                         <button class="nav-link" data-view="criar-curso" data-perm="create_course" onclick="switchView('criar-curso')"><i data-lucide="plus-circle"></i> Criar curso</button>
                         <button class="nav-link" data-view="catalogo" onclick="switchView('catalogo')"><i data-lucide="library"></i> Catálogo de cursos</button>
-                        <button class="nav-link" data-view="certificados" onclick="switchView('certificados')"><i data-lucide="badge-check"></i> Validar certificado</button>
+                        <button class="nav-link" data-view="certificados" onclick="switchView('certificados')"><i data-lucide="badge-check"></i> Validar certificado <span class="tag-proposta" title="Não consta nos requisitos originais; a validar com o gestor">Proposta</span></button>
                     </div>
                 </div>
 
                 <div class="nav-section">
                     <button class="nav-section-title" onclick="toggleNavSection(this)" aria-expanded="true">Conta <i data-lucide="chevron-down"></i></button>
                     <div class="nav-items">
-                        <button class="nav-link" onclick="openProfile()"><i data-lucide="user-round-cog"></i> Meu Perfil</button>
-                        <a class="nav-link" href="manual-do-aluno.html" target="_blank" rel="noopener"><i data-lucide="life-buoy"></i> Ajuda <i data-lucide="external-link" class="ml-auto" style="width:13px;height:13px"></i></a>
+                        <button class="nav-link" onclick="openProfile()"><i data-lucide="user-round-cog"></i> Meu Perfil <span class="tag-proposta" title="Não consta nos requisitos originais; a validar com o gestor">Proposta</span></button>
+                        <a class="nav-link" href="manual-do-aluno.html" target="_blank" rel="noopener"><i data-lucide="life-buoy"></i> Ajuda <span class="tag-proposta" title="Não consta nos requisitos originais; a validar com o gestor">Proposta</span> <i data-lucide="external-link" style="width:13px;height:13px"></i></a>
                         <button class="nav-link" onclick="logout()"><i data-lucide="log-out"></i> Sair</button>
                     </div>
                 </div>
@@ -276,7 +276,7 @@
                             </button>
                             <div class="dropdown" id="dd-notif" style="width:340px">
                                 <div class="flex items-center justify-between px-4 py-3 border-b border-line">
-                                    <span class="font-bold text-sm">Notificações</span>
+                                    <span class="font-bold text-sm">Notificações <span class="tag-proposta" title="Não consta nos requisitos originais; a validar com o gestor">Proposta</span></span>
                                     <button class="btn btn-ghost btn-sm" onclick="markAllNotifsRead()"><i data-lucide="check-check"></i> Marcar como lidas</button>
                                 </div>
                                 <div id="notif-list" class="custom-scroll" style="max-height:360px;overflow-y:auto"></div>

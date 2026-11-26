@@ -956,6 +956,9 @@ function refresh() {
 }
 
 /* ───────────────────────── COMPONENTES ───────────────────────── */
+// Etiqueta para funções que não constam nos requisitos originais (PPTX). Ver docs/prompts.md, P-08.
+const TAG_PROPOSTA = '<span class="tag-proposta" title="Não consta nos requisitos originais; a validar com o gestor">Proposta</span>';
+
 function pageHeader({ icon, crumb, title, subtitle, actions = '' }) {
     return `
     <div class="page-header">
@@ -1841,7 +1844,7 @@ function viewCertificados() {
     ${pageHeader({
         icon: 'award',
         crumb: isStudent ? 'Aprendizagem / Certificados' : 'Gestão / Certificados',
-        title: isStudent ? 'Meus Certificados' : 'Validar certificado',
+        title: isStudent ? 'Meus Certificados' : `Validar certificado ${TAG_PROPOSTA}`,
         subtitle: isStudent ? 'Emita e valide seus certificados nesta tela.' : 'Confira se um certificado emitido pela plataforma é verdadeiro.',
     })}
     <div class="grid grid-cols-1 ${isStudent ? 'lg:grid-cols-3' : ''} gap-4">
@@ -1875,7 +1878,7 @@ function viewCertificados() {
         <div class="panel ${isStudent ? '' : 'max-w-xl'}">
             <div class="panel-head">
                 <span class="panel-head-icon"><i data-lucide="shield-check"></i></span>
-                <div><div class="panel-title">Validar autenticidade</div><div class="panel-sub">Digite o código impresso no certificado</div></div>
+                <div><div class="panel-title">Validar autenticidade ${TAG_PROPOSTA}</div><div class="panel-sub">Digite o código impresso no certificado</div></div>
             </div>
             <form class="panel-body" onsubmit="validateCertificate(event)">
                 <label class="field-label" for="val-code">Código de validação</label>
@@ -2569,6 +2572,7 @@ function openProfile() {
     openModal({
         title: 'Meu perfil',
         icon: 'user-round-cog',
+        proposta: true,
         body: `
         <div class="flex flex-wrap items-center gap-4 mb-1">
             <div id="pf-avatar">${avatarHTML(user, 'xl')}</div>
@@ -2702,7 +2706,7 @@ function saveProfile(event) {
 /* ───────────────────────── MODAL ───────────────────────── */
 let lastFocus = null;
 
-function openModal({ title, icon = 'info', body = '', footer = '', size = '' }) {
+function openModal({ title, icon = 'info', body = '', footer = '', size = '', proposta = false }) {
     const overlay = $('#modal');
     const box = $('#modal-box');
     const wasOpen = overlay.classList.contains('active');
@@ -2710,6 +2714,7 @@ function openModal({ title, icon = 'info', body = '', footer = '', size = '' }) 
     const keepScroll = wasOpen ? bodyEl.scrollTop : 0;
 
     $('#modal-title').textContent = title;
+    if (proposta) $('#modal-title').insertAdjacentHTML('beforeend', ` ${TAG_PROPOSTA}`);
     $('#modal-icon').innerHTML = `<i data-lucide="${icon}"></i>`;
     bodyEl.innerHTML = body;
     $('#modal-footer').innerHTML = footer;
