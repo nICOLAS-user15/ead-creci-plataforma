@@ -1,17 +1,13 @@
-/* ==========================================================
-   regras.js — Regras de negócio da Plataforma EAD CRECI
-   ----------------------------------------------------------
-   Funções PURAS: não tocam em DOM, tela ou estado global.
-   Recebem dados e devolvem decisões.
-
-   Por quê separar: no sistema real, estas funções serão o núcleo
-   do back-end (API). Aqui elas rodam no navegador e também no
-   Node (ver tests/regras.test.js), o que permite provar que cada
-   regra dos PPTX funciona antes de construir o servidor.
-
-   Origem das regras: docs/requisitos.md (RN-xx).
-   Premissas ainda sem resposta do gestor: docs/lacunas-e-perguntas.md.
-   ========================================================== */
+/*
+ * Regras de negócio da Plataforma EAD CRECI.
+ *
+ * Funções puras: não acessam a página nem o estado global. Recebem dados e devolvem decisões.
+ * No sistema real, estas funções serão o núcleo do back-end. Aqui rodam no navegador e também
+ * no Node (tests/regras.test.js), o que permite testar cada regra sem abrir a tela.
+ *
+ * Origem das regras: docs/requisitos.md (RN-xx).
+ * Premissas ainda sem resposta do gestor: docs/lacunas-e-perguntas.md.
+ */
 (function (root, factory) {
     if (typeof module === 'object' && module.exports) module.exports = factory();
     else root.Regras = factory();

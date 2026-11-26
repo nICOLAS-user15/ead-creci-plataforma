@@ -2,7 +2,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const R = require('../regras.js');
+const R = require('../js/regras.js');
 
 test('RN-10: 60% exato aprova; 59,x% reprova (sem arredondar para cima)', () => {
     assert.equal(R.aprovadoPadrao(3, 5), true);    // 60,0%

@@ -1,8 +1,7 @@
-/* ==========================================================
-   styles.css — EAD CRECI (protótipo v5)
-   Design system inspirado no CRECI Integra + PTAM
-   Um único conjunto de tokens; o tema só troca os valores.
-   ========================================================== */
+/*
+ * Estilos do protótipo EAD CRECI, inspirados no CRECI Integra e no PTAM.
+ * Um único conjunto de variáveis de cor; o tema claro/escuro só troca os valores.
+ */
 
 /* ── TOKENS (canais RGB para permitir opacidade no Tailwind) ── */
 :root {

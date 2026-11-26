@@ -251,7 +251,7 @@
                     <div class="label-mono">Regional ativa</div>
                     <strong id="sidebar-regional">—</strong>
                 </div>
-                <div class="build-info">Plataforma EAD CRECI<br>Protótipo v5.0 · dados simulados</div>
+                <div class="build-info">Plataforma EAD CRECI<br>Protótipo v2.0 (em desenvolvimento) · dados simulados</div>
             </div>
         </aside>
         <div class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
@@ -337,7 +337,7 @@
         <button class="bottom-nav-item" onclick="openProfile()"><i data-lucide="user-round"></i>Perfil</button>
     </nav>
 
-    <!-- Modal único (conteúdo injetado pelo app.js) -->
+    <!-- Modal único (conteúdo preenchido por js/componentes.js) -->
     <div id="modal" class="modal-overlay" aria-hidden="true">
         <div class="modal" id="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
             <div class="modal-header">
@@ -353,7 +353,26 @@
 
     <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
 
-    <script src="regras.js"></script>
-    <script src="app.js"></script>
+    <!-- Scripts comuns (não módulos ES), para o protótipo abrir direto do disco (file://).
+         Compartilham o escopo global, então a ordem importa: regras e dados primeiro, inicio.js por último. -->
+    <script src="js/regras.js"></script>
+    <script src="js/utilitarios.js"></script>
+    <script src="js/dados.js"></script>
+    <script src="js/estado.js"></script>
+    <script src="js/componentes.js"></script>
+    <script src="js/login-cenario.js"></script>
+    <script src="js/login.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/cursos.js"></script>
+    <script src="js/telas/meus-cursos.js"></script>
+    <script src="js/telas/catalogo.js"></script>
+    <script src="js/telas/sala-de-aula.js"></script>
+    <script src="js/telas/certificados.js"></script>
+    <script src="js/telas/ptam.js"></script>
+    <script src="js/telas/notas-presenciais.js"></script>
+    <script src="js/telas/relatorios.js"></script>
+    <script src="js/telas/criar-curso.js"></script>
+    <script src="js/telas/perfil.js"></script>
+    <script src="js/inicio.js"></script>
 </body>
 </html>
